@@ -42,35 +42,38 @@ const useLocationStore = create((set) => ({
                 address: 'Error fetching location',
                 loading: false
             });
-            setManualLocation: (address, coords) => {
-                set({ address, location: { coords }, loading: false });
-            },
+        }
+    },
 
-                searchLocations: async (query) => {
-                    if (!query) return [];
-                    try {
-                        const results = await Location.geocodeAsync(query);
-                        const detailedResults = await Promise.all(
-                            results.slice(0, 5).map(async (res) => {
-                                const rev = await Location.reverseGeocodeAsync(res);
-                                if (rev.length > 0) {
-                                    const addr = rev[0];
-                                    const readable = `${addr.name || addr.street || ''}, ${addr.district || addr.city || ''}`;
-                                    return {
-                                        description: readable,
-                                        coords: res,
-                                        fullAddress: addr
-                                    };
-                                }
-                                return null;
-                            })
-                        );
-                        return detailedResults.filter(r => r !== null);
-                    } catch (err) {
-                        console.error('Search error:', err);
-                        return [];
+    setManualLocation: (address, coords) => {
+        set({ address, location: { coords }, loading: false });
+    },
+
+    searchLocations: async (query) => {
+        if (!query) return [];
+        try {
+            const results = await Location.geocodeAsync(query);
+            const detailedResults = await Promise.all(
+                results.slice(0, 5).map(async (res) => {
+                    const rev = await Location.reverseGeocodeAsync(res);
+                    if (rev.length > 0) {
+                        const addr = rev[0];
+                        const readable = `${addr.name || addr.street || ''}, ${addr.district || addr.city || ''}`;
+                        return {
+                            description: readable,
+                            coords: res,
+                            fullAddress: addr
+                        };
                     }
-                },
+                    return null;
+                })
+            );
+            return detailedResults.filter(r => r !== null);
+        } catch (err) {
+            console.error('Search error:', err);
+            return [];
+        }
+    },
 }));
 
 export default useLocationStore;

@@ -4,11 +4,33 @@ import useLocationStore from '../store/locationStore';
 import LocationPickerModal from '../components/LocationPickerModal';
 
 const CATEGORIES = [
-    // ... existing CATEGORIES ...
+    { id: '1', name: 'Pizza', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591' },
+    { id: '2', name: 'Burgers', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd' },
+    { id: '3', name: 'Sushi', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c' },
+    { id: '4', name: 'Biryani', image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0' },
 ];
 
 const RestaurantCard = ({ item, onPress }) => (
-// ... existing RestaurantCard ...
+    <TouchableOpacity style={styles.card} onPress={onPress}>
+        <Image source={{ uri: item.image || 'https://images.unsplash.com/photo-1550547660-d9450f859349' }} style={styles.cardImage} />
+        <View style={styles.cardContent}>
+            <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <View style={styles.ratingBadge}>
+                    <Star size={12} color="#FFF" fill="#FFF" />
+                    <Text style={styles.ratingText}>{item.rating || '4.0'}</Text>
+                </View>
+            </View>
+            <Text style={styles.cardSubtitle}>{item.cuisineTypes?.join(', ') || 'Various'}</Text>
+            <View style={styles.cardFooter}>
+                <View style={styles.infoItem}>
+                    <Clock size={14} color={COLORS.textLight} />
+                    <Text style={styles.infoText}>25-30 mins</Text>
+                </View>
+                <Text style={styles.infoText}>• 2.5 km</Text>
+            </View>
+        </View>
+    </TouchableOpacity>
 );
 
 const HomeScreen = ({ navigation }) => {
@@ -36,7 +58,6 @@ const HomeScreen = ({ navigation }) => {
                         <Text style={styles.locationText} numberOfLines={1}>{address}</Text>
                     </View>
                 </TouchableOpacity>
-                {/* ... profile button remains same ... */}
                 <TouchableOpacity
                     style={styles.profileBtn}
                     onPress={() => navigation.navigate(isAuthenticated ? 'Profile' : 'Login')}
