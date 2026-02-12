@@ -1,3 +1,7 @@
+import React from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { Search, MapPin, Star, Clock, User } from 'lucide-react-native';
+import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import useAuthStore from '../store/authStore';
 import useRestaurantStore from '../store/restaurantStore';
 import useLocationStore from '../store/locationStore';
