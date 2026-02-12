@@ -111,14 +111,16 @@ const CartScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: SPACING.md,
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
     },
     headerLeft: {
         flexDirection: 'row',
@@ -131,18 +133,20 @@ const styles = StyleSheet.create({
     headerTitle: {
         ...TYPOGRAPHY.h2,
         fontSize: 16,
+        color: COLORS.text,
     },
     headerSubtitle: {
         ...TYPOGRAPHY.label,
+        color: COLORS.textLight,
     },
     cartItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: SPACING.md,
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.surface,
         borderBottomWidth: 1,
-        borderBottomColor: '#F1F5F9',
+        borderBottomColor: COLORS.border,
     },
     cartItemLeft: {
         flex: 1,
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderWidth: 1,
-        borderColor: '#CCC',
+        borderColor: COLORS.textLight,
         padding: 1.5,
     },
     vegCircle: {
@@ -164,6 +168,7 @@ const styles = StyleSheet.create({
     itemName: {
         ...TYPOGRAPHY.body,
         fontWeight: '500',
+        color: COLORS.text,
     },
     stepper: {
         flexDirection: 'row',
@@ -184,7 +189,8 @@ const styles = StyleSheet.create({
     },
     itemPrice: {
         ...TYPOGRAPHY.body,
-        fontWeight: '600',
+        fontWeight: 'bold',
+        color: COLORS.text,
         width: 60,
         textAlign: 'right',
     },
@@ -192,14 +198,17 @@ const styles = StyleSheet.create({
         padding: SPACING.md,
     },
     billDetails: {
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.surface,
         padding: SPACING.md,
         borderRadius: 12,
         marginTop: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
     billTitle: {
         ...TYPOGRAPHY.h2,
         fontSize: 16,
+        color: COLORS.text,
         marginBottom: SPACING.md,
     },
     billRow: {
@@ -213,26 +222,29 @@ const styles = StyleSheet.create({
     },
     billValue: {
         ...TYPOGRAPHY.body,
+        color: COLORS.text,
     },
     totalRow: {
         marginTop: SPACING.md,
         paddingTop: SPACING.md,
         borderTopWidth: 1,
-        borderTopColor: '#F1F5F9',
+        borderTopColor: COLORS.border,
     },
     totalLabel: {
         ...TYPOGRAPHY.h2,
         fontSize: 18,
+        color: COLORS.text,
     },
     totalValue: {
         ...TYPOGRAPHY.h2,
         fontSize: 18,
+        color: COLORS.primary,
     },
     bottomBar: {
         padding: SPACING.md,
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.surface,
         borderTopWidth: 1,
-        borderTopColor: '#F1F5F9',
+        borderTopColor: COLORS.border,
     },
     checkoutBtn: {
         backgroundColor: COLORS.primary,
@@ -241,7 +253,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     checkoutBtnText: {
-        color: '#FFF',
+        color: '#000',
         fontWeight: 'bold',
         fontSize: 16,
     },
@@ -249,7 +261,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.background,
     },
     emptyImage: {
         width: 200,
@@ -269,7 +281,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     browseBtnText: {
-        color: '#FFF',
+        color: '#000',
         fontWeight: 'bold',
     },
 });

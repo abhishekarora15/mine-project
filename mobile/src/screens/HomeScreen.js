@@ -156,26 +156,30 @@ const styles = StyleSheet.create({
     },
     locationTitle: {
         ...TYPOGRAPHY.label,
+        color: COLORS.textLight,
     },
     locationText: {
         ...TYPOGRAPHY.body,
+        color: COLORS.text,
         fontWeight: 'bold',
     },
     profileBtn: {
         padding: 2,
     },
     profileCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: COLORS.border,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.surface,
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
     profileInitial: {
         color: COLORS.primary,
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 18,
     },
     searchContainer: {
         flexDirection: 'row',
@@ -183,8 +187,8 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surface,
         marginHorizontal: SPACING.md,
         paddingHorizontal: SPACING.md,
-        borderRadius: 12,
-        height: 48,
+        borderRadius: 16,
+        height: 54,
         borderWidth: 1,
         borderColor: COLORS.border,
         marginBottom: SPACING.lg,
@@ -193,6 +197,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: SPACING.sm,
         ...TYPOGRAPHY.body,
+        color: COLORS.text,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -203,6 +208,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         ...TYPOGRAPHY.h2,
+        color: COLORS.text,
     },
     seeAll: {
         color: COLORS.primary,
@@ -217,10 +223,12 @@ const styles = StyleSheet.create({
         marginRight: SPACING.lg,
     },
     categoryImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         marginBottom: SPACING.xs,
+        borderWidth: 2,
+        borderColor: COLORS.border,
     },
     categoryText: {
         ...TYPOGRAPHY.label,
@@ -229,16 +237,21 @@ const styles = StyleSheet.create({
     },
     card: {
         marginHorizontal: SPACING.md,
-        backgroundColor: '#FFF',
-        borderRadius: 16,
-        marginBottom: SPACING.md,
+        backgroundColor: COLORS.surface,
+        borderRadius: 20,
+        marginBottom: SPACING.lg,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: COLORS.border,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
     cardImage: {
         width: '100%',
-        height: 180,
+        height: 200,
     },
     cardContent: {
         padding: SPACING.md,
@@ -251,6 +264,7 @@ const styles = StyleSheet.create({
     cardTitle: {
         ...TYPOGRAPHY.h2,
         fontSize: 18,
+        color: COLORS.text,
     },
     ratingBadge: {
         flexDirection: 'row',
@@ -258,7 +272,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.success,
         paddingHorizontal: 8,
         paddingVertical: 2,
-        borderRadius: 6,
+        borderRadius: 8,
         gap: 4,
     },
     ratingText: {
@@ -269,13 +283,16 @@ const styles = StyleSheet.create({
     cardSubtitle: {
         ...TYPOGRAPHY.body,
         color: COLORS.textLight,
-        marginTop: 2,
+        marginTop: 4,
     },
     cardFooter: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: SPACING.sm,
-        gap: SPACING.sm,
+        marginTop: SPACING.md,
+        gap: SPACING.md,
+        paddingTop: SPACING.sm,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
     },
     infoItem: {
         flexDirection: 'row',
@@ -284,6 +301,7 @@ const styles = StyleSheet.create({
     },
     infoText: {
         ...TYPOGRAPHY.label,
+        color: COLORS.textLight,
     },
 });
 

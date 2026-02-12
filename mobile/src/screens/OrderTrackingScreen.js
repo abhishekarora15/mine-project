@@ -77,34 +77,36 @@ const OrderTrackingScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         padding: SPACING.md,
         alignItems: 'center',
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.background,
     },
     headerTitle: {
         ...TYPOGRAPHY.h2,
         fontSize: 18,
+        color: COLORS.text,
     },
     mapContainer: {
         height: '40%',
         position: 'relative',
+        backgroundColor: '#000',
     },
     mapImage: {
         width: '100%',
         height: '100%',
-        opacity: 0.6,
+        opacity: 0.4,
     },
     mapMarker: {
         position: 'absolute',
     },
     statusCard: {
         flex: 1,
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.surface,
         borderTopLeftRadius: 32,
         borderTopRightRadius: 32,
         marginTop: -32,
@@ -112,8 +114,10 @@ const styles = StyleSheet.create({
         elevation: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.5,
         shadowRadius: 10,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
     deliveryInfo: {
         flexDirection: 'row',
@@ -135,6 +139,8 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
+        borderWidth: 2,
+        borderColor: COLORS.primary,
     },
     trackingSteps: {
         flex: 1,
@@ -171,6 +177,7 @@ const styles = StyleSheet.create({
         ...TYPOGRAPHY.label,
         fontSize: 10,
         marginTop: 2,
+        color: COLORS.textLight,
     },
     actionButtons: {
         flexDirection: 'row',
@@ -187,6 +194,7 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
         borderRadius: 12,
         padding: 12,
+        backgroundColor: 'transparent',
     },
     actionBtnText: {
         color: COLORS.primary,

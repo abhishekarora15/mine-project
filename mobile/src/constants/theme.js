@@ -1,14 +1,14 @@
 export const COLORS = {
-    primary: '#F97316', // Swiggy-like Orange
-    secondary: '#2563EB', // Blue for secondary actions
-    background: '#FFFFFF',
-    surface: '#F8FAFC',
-    text: '#0F172A',
-    textLight: '#64748B',
-    border: '#E2E8F0',
+    primary: '#FF9F0D', // Vibrant Foodie Amber
+    secondary: '#3B82F6',
+    background: '#0F0F0F', // Deep Charcoal/Black
+    surface: '#1A1A1A', // Card Background
+    text: '#FFFFFF',
+    textLight: '#A0A0A0',
+    border: '#262626',
     success: '#22C55E',
     error: '#EF4444',
-    warning: '#F59E0B',
+    warning: '#FF9F0D',
 };
 
 export const SPACING = {

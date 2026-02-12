@@ -34,7 +34,7 @@ export default function App() {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </NavigationContainer>
   );
 }

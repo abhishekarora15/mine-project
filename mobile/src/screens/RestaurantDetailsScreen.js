@@ -126,7 +126,7 @@ const RestaurantDetailsScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: 'row',
@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
     title: {
         ...TYPOGRAPHY.h1,
         fontSize: 22,
+        color: COLORS.text,
     },
     subtitle: {
         ...TYPOGRAPHY.body,
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
     metaText: {
         ...TYPOGRAPHY.label,
         fontWeight: 'bold',
-        color: '#333',
+        color: COLORS.text,
     },
     metaDot: {
         color: COLORS.textLight,
@@ -185,6 +186,7 @@ const styles = StyleSheet.create({
     categoryTitle: {
         ...TYPOGRAPHY.h2,
         fontSize: 18,
+        color: COLORS.text,
         marginBottom: SPACING.lg,
     },
     menuItem: {
@@ -193,7 +195,7 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.xl,
         paddingBottom: SPACING.lg,
         borderBottomWidth: 1,
-        borderBottomColor: '#F1F1F1',
+        borderBottomColor: COLORS.border,
     },
     menuItemInfo: {
         flex: 1,
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
         width: 14,
         height: 14,
         borderWidth: 1,
-        borderColor: '#CCC',
+        borderColor: COLORS.textLight,
         padding: 2,
         marginBottom: 4,
     },
@@ -214,14 +216,17 @@ const styles = StyleSheet.create({
     menuItemName: {
         ...TYPOGRAPHY.h2,
         fontSize: 16,
+        color: COLORS.text,
     },
     menuItemPrice: {
         ...TYPOGRAPHY.body,
-        fontWeight: '600',
+        fontWeight: 'bold',
+        color: COLORS.primary,
         marginVertical: 4,
     },
     menuItemDesc: {
         ...TYPOGRAPHY.label,
+        color: COLORS.textLight,
         lineHeight: 18,
     },
     menuItemImageContainer: {
@@ -238,7 +243,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: -15,
         alignSelf: 'center',
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.surface,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
         elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.3,
         shadowRadius: 4,
     },
     addBtn: {

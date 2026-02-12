@@ -50,6 +50,7 @@ const RegisterScreen = ({ navigation }) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Enter your name"
+                                placeholderTextColor={COLORS.textLight + '80'}
                                 value={name}
                                 onChangeText={setName}
                             />
@@ -63,6 +64,7 @@ const RegisterScreen = ({ navigation }) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="your@email.com"
+                                placeholderTextColor={COLORS.textLight + '80'}
                                 value={email}
                                 onChangeText={setEmail}
                                 autoCapitalize="none"
@@ -78,6 +80,7 @@ const RegisterScreen = ({ navigation }) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="10 digit number"
+                                placeholderTextColor={COLORS.textLight + '80'}
                                 value={phone}
                                 onChangeText={setPhone}
                                 keyboardType="phone-pad"
@@ -92,6 +95,7 @@ const RegisterScreen = ({ navigation }) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Min 6 characters"
+                                placeholderTextColor={COLORS.textLight + '80'}
                                 secureTextEntry
                                 value={password}
                                 onChangeText={setPassword}
@@ -126,7 +130,7 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFF',
+        backgroundColor: COLORS.background,
     },
     formContainer: {
         flex: 1,
@@ -141,6 +145,7 @@ const styles = StyleSheet.create({
     title: {
         ...TYPOGRAPHY.h1,
         fontSize: 32,
+        color: COLORS.text,
     },
     subtitle: {
         ...TYPOGRAPHY.body,
@@ -154,6 +159,7 @@ const styles = StyleSheet.create({
         ...TYPOGRAPHY.label,
         fontWeight: 'bold',
         marginBottom: 8,
+        color: COLORS.text,
     },
     inputWrapper: {
         flexDirection: 'row',
@@ -163,13 +169,14 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         paddingHorizontal: SPACING.md,
         height: 56,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: COLORS.surface,
     },
     input: {
         flex: 1,
         marginLeft: SPACING.sm,
         ...TYPOGRAPHY.body,
         height: '100%',
+        color: COLORS.text,
     },
     registerBtn: {
         backgroundColor: COLORS.primary,
@@ -185,10 +192,10 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
     disabledBtn: {
-        opacity: 0.7,
+        opacity: 0.5,
     },
     registerBtnText: {
-        color: '#FFF',
+        color: '#000',
         fontSize: 16,
         fontWeight: 'bold',
     },
