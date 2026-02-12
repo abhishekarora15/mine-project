@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { Search, MapPin, Star, Clock, User } from 'lucide-react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import useAuthStore from '../store/authStore';
@@ -9,7 +9,7 @@ const CATEGORIES = [
     { id: '1', name: 'Pizza', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591' },
     { id: '2', name: 'Burgers', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd' },
     { id: '3', name: 'Sushi', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c' },
-    { id: '4', name: 'Biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8' },
+    { id: '4', name: 'Biryani', image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0' },
 ];
 
 const RestaurantCard = ({ item, onPress }) => (
@@ -71,7 +71,12 @@ const HomeScreen = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={loading} onRefresh={fetchRestaurants} tintColor={COLORS.primary} />
+                }
+            >
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
                     <Search size={20} color={COLORS.textLight} />
@@ -111,8 +116,16 @@ const HomeScreen = ({ navigation }) => {
                 </View>
 
                 {loading ? (
-                    <View style={{ padding: 20 }}>
+                    <View style={styles.loadingContainer}>
                         <ActivityIndicator color={COLORS.primary} size="large" />
+                        <Text style={styles.loadingText}>Fetching delicious food...</Text>
+                    </View>
+                ) : restaurants.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No restaurants found nearby.</Text>
+                        <TouchableOpacity style={styles.retryBtn} onPress={fetchRestaurants}>
+                            <Text style={styles.retryText}>Retry</Text>
+                        </TouchableOpacity>
                     </View>
                 ) : (
                     restaurants.map(item => (
@@ -294,6 +307,35 @@ const styles = StyleSheet.create({
     infoText: {
         ...TYPOGRAPHY.label,
         color: COLORS.textLight,
+    },
+    loadingContainer: {
+        padding: 50,
+        alignItems: 'center',
+    },
+    loadingText: {
+        ...TYPOGRAPHY.body,
+        color: COLORS.textLight,
+        marginTop: SPACING.md,
+    },
+    emptyContainer: {
+        padding: 50,
+        alignItems: 'center',
+    },
+    emptyText: {
+        ...TYPOGRAPHY.body,
+        color: COLORS.textLight,
+        marginBottom: SPACING.lg,
+    },
+    retryBtn: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: SPACING.xl,
+        paddingVertical: SPACING.md,
+        borderRadius: 12,
+    },
+    retryText: {
+        ...TYPOGRAPHY.body,
+        fontWeight: 'bold',
+        color: '#000',
     },
 });
 

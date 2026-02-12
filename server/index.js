@@ -70,6 +70,13 @@ app.get('/api', (req, res) => {
   res.json({ message: 'Welcome to Food Delivery API' });
 });
 
+// Seed Data Route (Temporary)
+const seedData = require('./utils/seedData');
+app.post('/api/seed', async (req, res) => {
+  const result = await seedData();
+  res.json(result);
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
