@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+dist/
+web-build/
+.DS_Store
+*.pem
+.env*.local
+server/.env
+mobile/node_modules/
+server/node_modules/
