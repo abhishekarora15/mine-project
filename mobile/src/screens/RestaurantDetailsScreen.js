@@ -1,28 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { ChevronLeft, Share2, Info, Star, Plus, Minus } from 'lucide-react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import useCartStore from '../store/cartStore';
-
-const MENU_DATA = [
-    {
-        category: 'Best Sellers',
-        items: [
-            { id: 'm1', name: 'Classic Veg Burger', price: 129, description: 'Single veg patty, cheese, onion, tomato', isVeg: true, image: 'https://images.unsplash.com/photo-1550547660-d9450f859349' },
-            { id: 'm2', name: 'Peri Peri Fries', price: 99, description: 'Crispy fries with peri peri seasoning', isVeg: true, image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877' },
-        ]
-    },
-    {
-        category: 'Combos',
-        items: [
-            { id: 'm3', name: 'Happy Meal', price: 299, description: 'Burger + Fries + Coke', isVeg: true, image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5' },
-        ]
-    }
-];
+import useRestaurantStore from '../store/restaurantStore';
 
 const MenuItem = ({ item, restaurant }) => {
     const { addItem, removeItem, items } = useCartStore();
-    const cartItem = items.find(i => i.id === item.id);
+    const cartItem = items.find(i => i.id === (item._id || item.id));
     const quantity = cartItem ? cartItem.quantity : 0;
 
     return (
@@ -36,11 +21,11 @@ const MenuItem = ({ item, restaurant }) => {
                 <Text style={styles.menuItemDesc} numberOfLines={2}>{item.description}</Text>
             </View>
             <View style={styles.menuItemImageContainer}>
-                <Image source={{ uri: item.image }} style={styles.menuItemImage} />
+                <Image source={{ uri: item.image || 'https://images.unsplash.com/photo-1550547660-d9450f859349' }} style={styles.menuItemImage} />
                 <View style={styles.addButtonContainer}>
                     {quantity > 0 ? (
                         <View style={styles.stepper}>
-                            <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.stepperBtn}>
+                            <TouchableOpacity onPress={() => removeItem(item._id || item.id)} style={styles.stepperBtn}>
                                 <Minus size={16} color={COLORS.primary} />
                             </TouchableOpacity>
                             <Text style={styles.stepperText}>{quantity}</Text>
@@ -62,6 +47,11 @@ const MenuItem = ({ item, restaurant }) => {
 const RestaurantDetailsScreen = ({ route, navigation }) => {
     const { restaurant } = route.params;
     const { items, getTotal } = useCartStore();
+    const { currentMenu, loading, fetchRestaurantMenu } = useRestaurantStore();
+
+    React.useEffect(() => {
+        fetchRestaurantMenu(restaurant._id);
+    }, [restaurant._id]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -76,35 +66,47 @@ const RestaurantDetailsScreen = ({ route, navigation }) => {
                 </View>
             </View>
 
-            <FlatList
-                ListHeaderComponent={
-                    <View style={styles.restaurantInfo}>
-                        <Text style={styles.title}>{restaurant.name}</Text>
-                        <Text style={styles.subtitle}>{restaurant.cuisine}</Text>
-                        <View style={styles.metaInfo}>
-                            <View style={styles.metaItem}>
-                                <Star size={16} color={COLORS.success} fill={COLORS.success} />
-                                <Text style={styles.metaText}>{restaurant.rating} (100+ ratings)</Text>
+            {loading ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    ListHeaderComponent={
+                        <View style={styles.restaurantInfo}>
+                            <Text style={styles.title}>{restaurant.name}</Text>
+                            <Text style={styles.subtitle}>{restaurant.cuisineTypes?.join(' • ') || 'Various'}</Text>
+                            <View style={styles.metaInfo}>
+                                <View style={styles.metaItem}>
+                                    <Star size={16} color={COLORS.success} fill={COLORS.success} />
+                                    <Text style={styles.metaText}>{restaurant.rating || '4.5'} (100+ ratings)</Text>
+                                </View>
+                                <Text style={styles.metaDot}>•</Text>
+                                <Text style={styles.metaText}>25-30 mins</Text>
                             </View>
-                            <Text style={styles.metaDot}>•</Text>
-                            <Text style={styles.metaText}>{restaurant.time}</Text>
+                            <View style={styles.divider} />
                         </View>
-                        <View style={styles.divider} />
-                    </View>
-                }
-                data={MENU_DATA}
-                renderItem={({ item }) => (
-                    <View style={styles.categorySection}>
-                        <Text style={styles.categoryTitle}>{item.category} ({item.items.length})</Text>
-                        {item.items.map(menuItem => (
-                            <MenuItem key={menuItem.id} item={menuItem} restaurant={restaurant} />
-                        ))}
-                    </View>
-                )}
-                keyExtractor={(item) => item.category}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: items.length > 0 ? 100 : 24 }}
-            />
+                    }
+                    data={Object.entries(
+                        currentMenu.reduce((acc, item) => {
+                            if (!acc[item.category]) acc[item.category] = [];
+                            acc[item.category].push(item);
+                            return acc;
+                        }, {})
+                    ).map(([category, items]) => ({ category, items }))}
+                    renderItem={({ item }) => (
+                        <View style={styles.categorySection}>
+                            <Text style={styles.categoryTitle}>{item.category} ({item.items.length})</Text>
+                            {item.items.map(menuItem => (
+                                <MenuItem key={menuItem._id || menuItem.id} item={menuItem} restaurant={restaurant} />
+                            ))}
+                        </View>
+                    )}
+                    keyExtractor={(item) => item.category}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: items.length > 0 ? 100 : 24 }}
+                />
+            )}
 
             {items.length > 0 && (
                 <View style={styles.cartFooter}>

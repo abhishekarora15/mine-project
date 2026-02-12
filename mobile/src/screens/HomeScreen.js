@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Search, MapPin, Star, Clock, User } from 'lucide-react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import useAuthStore from '../store/authStore';
+import useRestaurantStore from '../store/restaurantStore';
 
 const CATEGORIES = [
     { id: '1', name: 'Pizza', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591' },
@@ -11,45 +12,24 @@ const CATEGORIES = [
     { id: '4', name: 'Biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8' },
 ];
 
-const RESTAURANTS = [
-    {
-        id: '1',
-        name: 'The Burger Club',
-        cuisine: 'American • Burgers',
-        rating: 4.5,
-        time: '25-30 mins',
-        image: 'https://images.unsplash.com/photo-1550547660-d9450f859349',
-        distance: '2.5 km',
-    },
-    {
-        id: '2',
-        name: 'Pizza Hut',
-        cuisine: 'Italian • Pizza',
-        rating: 4.2,
-        time: '30-40 mins',
-        image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591',
-        distance: '3.1 km',
-    },
-];
-
 const RestaurantCard = ({ item, onPress }) => (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-        <Image source={{ uri: item.image }} style={styles.cardImage} />
+        <Image source={{ uri: item.image || 'https://images.unsplash.com/photo-1550547660-d9450f859349' }} style={styles.cardImage} />
         <View style={styles.cardContent}>
             <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{item.name}</Text>
                 <View style={styles.ratingBadge}>
                     <Star size={12} color="#FFF" fill="#FFF" />
-                    <Text style={styles.ratingText}>{item.rating}</Text>
+                    <Text style={styles.ratingText}>{item.rating || '4.0'}</Text>
                 </View>
             </View>
-            <Text style={styles.cardSubtitle}>{item.cuisine}</Text>
+            <Text style={styles.cardSubtitle}>{item.cuisineTypes?.join(', ') || 'Various'}</Text>
             <View style={styles.cardFooter}>
                 <View style={styles.infoItem}>
                     <Clock size={14} color={COLORS.textLight} />
-                    <Text style={styles.infoText}>{item.time}</Text>
+                    <Text style={styles.infoText}>25-30 mins</Text>
                 </View>
-                <Text style={styles.infoText}>• {item.distance}</Text>
+                <Text style={styles.infoText}>• 2.5 km</Text>
             </View>
         </View>
     </TouchableOpacity>
@@ -57,6 +37,11 @@ const RestaurantCard = ({ item, onPress }) => (
 
 const HomeScreen = ({ navigation }) => {
     const { isAuthenticated, user } = useAuthStore();
+    const { restaurants, loading, fetchRestaurants } = useRestaurantStore();
+
+    React.useEffect(() => {
+        fetchRestaurants();
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -124,13 +109,20 @@ const HomeScreen = ({ navigation }) => {
                         <Text style={styles.seeAll}>See All</Text>
                     </TouchableOpacity>
                 </View>
-                {RESTAURANTS.map(item => (
-                    <RestaurantCard
-                        key={item.id}
-                        item={item}
-                        onPress={() => navigation.navigate('RestaurantDetails', { restaurant: item })}
-                    />
-                ))}
+
+                {loading ? (
+                    <View style={{ padding: 20 }}>
+                        <ActivityIndicator color={COLORS.primary} size="large" />
+                    </View>
+                ) : (
+                    restaurants.map(item => (
+                        <RestaurantCard
+                            key={item._id}
+                            item={item}
+                            onPress={() => navigation.navigate('RestaurantDetails', { restaurant: item })}
+                        />
+                    ))
+                )}
             </ScrollView>
         </View>
     );

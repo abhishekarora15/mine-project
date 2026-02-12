@@ -4,8 +4,53 @@ import { ChevronLeft, Trash2, Plus, Minus } from 'lucide-react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import useCartStore from '../store/cartStore';
 
+import { API_URL } from '../constants/config';
+import axios from 'axios';
+import useAuthStore from '../store/authStore';
+import { ActivityIndicator } from 'react-native';
+
 const CartScreen = ({ navigation }) => {
     const { items, restaurant, addItem, removeItem, clearCart, getTotal } = useCartStore();
+    const { token } = useAuthStore();
+    const [isPlacingOrder, setIsPlacingOrder] = React.useState(false);
+
+    const handlePlaceOrder = async () => {
+        if (!token) {
+            Alert.alert('Login Required', 'Please login to place an order', [
+                { text: 'Login', onPress: () => navigation.navigate('Login') },
+                { text: 'Cancel', style: 'cancel' }
+            ]);
+            return;
+        }
+
+        setIsPlacingOrder(true);
+        try {
+            const orderData = {
+                restaurantId: restaurant._id,
+                items: items.map(i => ({
+                    menuItemId: i._id || i.id,
+                    name: i.name,
+                    quantity: i.quantity,
+                    price: i.price
+                })),
+                totalAmount: getTotal() + 30, // Including fee
+                deliveryAddress: 'Home - Dwarka Sector 12', // Static for now
+            };
+
+            const response = await axios.post(`${API_URL}/orders`, orderData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data.status === 'success') {
+                clearCart();
+                navigation.navigate('OrderTracking', { orderId: response.data.data.order._id });
+            }
+        } catch (err) {
+            Alert.alert('Error', err.response?.data?.message || 'Failed to place order');
+        } finally {
+            setIsPlacingOrder(false);
+        }
+    };
 
     if (items.length === 0) {
         return (
@@ -89,19 +134,15 @@ const CartScreen = ({ navigation }) => {
 
             <View style={styles.bottomBar}>
                 <TouchableOpacity
-                    style={styles.checkoutBtn}
-                    onPress={() => {
-                        Alert.alert(
-                            "Confirm Order",
-                            "Would you like to proceed with the payment?",
-                            [
-                                { text: "Cancel", style: "cancel" },
-                                { text: "Pay Now", onPress: () => navigation.navigate('OrderTracking') }
-                            ]
-                        );
-                    }}
+                    style={[styles.checkoutBtn, isPlacingOrder && { opacity: 0.7 }]}
+                    onPress={handlePlaceOrder}
+                    disabled={isPlacingOrder}
                 >
-                    <Text style={styles.checkoutBtnText}>Proceed to Pay</Text>
+                    {isPlacingOrder ? (
+                        <ActivityIndicator color="#000" />
+                    ) : (
+                        <Text style={styles.checkoutBtnText}>Proceed to Pay</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
