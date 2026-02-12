@@ -1,0 +1,310 @@
+import React from 'react';
+import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import { ChevronLeft, Share2, Info, Star, Plus, Minus } from 'lucide-react-native';
+import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
+import useCartStore from '../store/cartStore';
+
+const MENU_DATA = [
+    {
+        category: 'Best Sellers',
+        items: [
+            { id: 'm1', name: 'Classic Veg Burger', price: 129, description: 'Single veg patty, cheese, onion, tomato', isVeg: true, image: 'https://images.unsplash.com/photo-1550547660-d9450f859349' },
+            { id: 'm2', name: 'Peri Peri Fries', price: 99, description: 'Crispy fries with peri peri seasoning', isVeg: true, image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877' },
+        ]
+    },
+    {
+        category: 'Combos',
+        items: [
+            { id: 'm3', name: 'Happy Meal', price: 299, description: 'Burger + Fries + Coke', isVeg: true, image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5' },
+        ]
+    }
+];
+
+const MenuItem = ({ item, restaurant }) => {
+    const { addItem, removeItem, items } = useCartStore();
+    const cartItem = items.find(i => i.id === item.id);
+    const quantity = cartItem ? cartItem.quantity : 0;
+
+    return (
+        <View style={styles.menuItem}>
+            <View style={styles.menuItemInfo}>
+                <View style={styles.vegBadge}>
+                    <View style={[styles.vegCircle, { backgroundColor: item.isVeg ? '#008000' : '#8B0000' }]} />
+                </View>
+                <Text style={styles.menuItemName}>{item.name}</Text>
+                <Text style={styles.menuItemPrice}>₹{item.price}</Text>
+                <Text style={styles.menuItemDesc} numberOfLines={2}>{item.description}</Text>
+            </View>
+            <View style={styles.menuItemImageContainer}>
+                <Image source={{ uri: item.image }} style={styles.menuItemImage} />
+                <View style={styles.addButtonContainer}>
+                    {quantity > 0 ? (
+                        <View style={styles.stepper}>
+                            <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.stepperBtn}>
+                                <Minus size={16} color={COLORS.primary} />
+                            </TouchableOpacity>
+                            <Text style={styles.stepperText}>{quantity}</Text>
+                            <TouchableOpacity onPress={() => addItem(item, restaurant)} style={styles.stepperBtn}>
+                                <Plus size={16} color={COLORS.primary} />
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity onPress={() => addItem(item, restaurant)} style={styles.addBtn}>
+                            <Text style={styles.addBtnText}>ADD</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+        </View>
+    );
+};
+
+const RestaurantDetailsScreen = ({ route, navigation }) => {
+    const { restaurant } = route.params;
+    const { items, getTotal } = useCartStore();
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <ChevronLeft size={24} color={COLORS.text} />
+                </TouchableOpacity>
+                <View style={styles.headerActions}>
+                    <TouchableOpacity style={styles.headerIcon}>
+                        <Share2 size={20} color={COLORS.text} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <FlatList
+                ListHeaderComponent={
+                    <View style={styles.restaurantInfo}>
+                        <Text style={styles.title}>{restaurant.name}</Text>
+                        <Text style={styles.subtitle}>{restaurant.cuisine}</Text>
+                        <View style={styles.metaInfo}>
+                            <View style={styles.metaItem}>
+                                <Star size={16} color={COLORS.success} fill={COLORS.success} />
+                                <Text style={styles.metaText}>{restaurant.rating} (100+ ratings)</Text>
+                            </View>
+                            <Text style={styles.metaDot}>•</Text>
+                            <Text style={styles.metaText}>{restaurant.time}</Text>
+                        </View>
+                        <View style={styles.divider} />
+                    </View>
+                }
+                data={MENU_DATA}
+                renderItem={({ item }) => (
+                    <View style={styles.categorySection}>
+                        <Text style={styles.categoryTitle}>{item.category} ({item.items.length})</Text>
+                        {item.items.map(menuItem => (
+                            <MenuItem key={menuItem.id} item={menuItem} restaurant={restaurant} />
+                        ))}
+                    </View>
+                )}
+                keyExtractor={(item) => item.category}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: items.length > 0 ? 100 : 24 }}
+            />
+
+            {items.length > 0 && (
+                <View style={styles.cartFooter}>
+                    <TouchableOpacity style={styles.cartBar} onPress={() => navigation.navigate('Cart')}>
+                        <View>
+                            <Text style={styles.cartCount}>{items.length} ITEM{items.length > 1 ? 'S' : ''}</Text>
+                            <Text style={styles.cartTotal}>₹{getTotal()} plus taxes</Text>
+                        </View>
+                        <View style={styles.viewCartAction}>
+                            <Text style={styles.viewCartText}>View Cart</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            )}
+        </SafeAreaView>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#FFF',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: SPACING.md,
+        alignItems: 'center',
+    },
+    headerActions: {
+        flexDirection: 'row',
+        gap: SPACING.md,
+    },
+    headerIcon: {
+        padding: 4,
+    },
+    restaurantInfo: {
+        paddingHorizontal: SPACING.md,
+        paddingTop: SPACING.sm,
+    },
+    title: {
+        ...TYPOGRAPHY.h1,
+        fontSize: 22,
+    },
+    subtitle: {
+        ...TYPOGRAPHY.body,
+        color: COLORS.textLight,
+        marginTop: 4,
+    },
+    metaInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: SPACING.md,
+        gap: 8,
+    },
+    metaItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    metaText: {
+        ...TYPOGRAPHY.label,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    metaDot: {
+        color: COLORS.textLight,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.border,
+        marginVertical: SPACING.lg,
+    },
+    categorySection: {
+        paddingHorizontal: SPACING.md,
+        marginBottom: SPACING.xl,
+    },
+    categoryTitle: {
+        ...TYPOGRAPHY.h2,
+        fontSize: 18,
+        marginBottom: SPACING.lg,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: SPACING.xl,
+        paddingBottom: SPACING.lg,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F1F1',
+    },
+    menuItemInfo: {
+        flex: 1,
+        paddingRight: SPACING.md,
+    },
+    vegBadge: {
+        width: 14,
+        height: 14,
+        borderWidth: 1,
+        borderColor: '#CCC',
+        padding: 2,
+        marginBottom: 4,
+    },
+    vegCircle: {
+        flex: 1,
+        borderRadius: 2,
+    },
+    menuItemName: {
+        ...TYPOGRAPHY.h2,
+        fontSize: 16,
+    },
+    menuItemPrice: {
+        ...TYPOGRAPHY.body,
+        fontWeight: '600',
+        marginVertical: 4,
+    },
+    menuItemDesc: {
+        ...TYPOGRAPHY.label,
+        lineHeight: 18,
+    },
+    menuItemImageContainer: {
+        width: 120,
+        height: 120,
+        position: 'relative',
+    },
+    menuItemImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 12,
+    },
+    addButtonContainer: {
+        position: 'absolute',
+        bottom: -15,
+        alignSelf: 'center',
+        backgroundColor: '#FFF',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        width: 90,
+        height: 36,
+        justifyContent: 'center',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    addBtn: {
+        alignItems: 'center',
+    },
+    addBtnText: {
+        color: COLORS.primary,
+        fontWeight: 'bold',
+    },
+    stepper: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+    },
+    stepperBtn: {
+        padding: 4,
+    },
+    stepperText: {
+        fontWeight: 'bold',
+        color: COLORS.primary,
+    },
+    cartFooter: {
+        position: 'absolute',
+        bottom: 20,
+        left: 16,
+        right: 16,
+    },
+    cartBar: {
+        backgroundColor: COLORS.success,
+        borderRadius: 12,
+        padding: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    cartCount: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    cartTotal: {
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    viewCartAction: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    viewCartText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+});
+
+export default RestaurantDetailsScreen;
