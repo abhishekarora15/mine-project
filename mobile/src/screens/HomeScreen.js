@@ -4,6 +4,7 @@ import { Search, MapPin, Star, Clock, User } from 'lucide-react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import useAuthStore from '../store/authStore';
 import useRestaurantStore from '../store/restaurantStore';
+import useLocationStore from '../store/locationStore';
 
 const CATEGORIES = [
     { id: '1', name: 'Pizza', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591' },
@@ -38,9 +39,11 @@ const RestaurantCard = ({ item, onPress }) => (
 const HomeScreen = ({ navigation }) => {
     const { isAuthenticated, user } = useAuthStore();
     const { restaurants, loading, fetchRestaurants } = useRestaurantStore();
+    const { address, fetchLocation } = useLocationStore();
 
     React.useEffect(() => {
         fetchRestaurants();
+        fetchLocation();
     }, []);
 
     return (
@@ -49,12 +52,12 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.locationContainer}
-                    onPress={() => console.log('Change location pressed')}
+                    onPress={fetchLocation}
                 >
                     <MapPin size={20} color={COLORS.primary} />
-                    <View>
+                    <View style={{ flex: 1 }}>
                         <Text style={styles.locationTitle}>Delivery to</Text>
-                        <Text style={styles.locationText}>Home - Dwarka Sector 12</Text>
+                        <Text style={styles.locationText} numberOfLines={1}>{address}</Text>
                     </View>
                 </TouchableOpacity>
                 <TouchableOpacity
