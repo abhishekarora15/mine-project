@@ -62,13 +62,16 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <View style={styles.locationContainer}>
+                <TouchableOpacity
+                    style={styles.locationContainer}
+                    onPress={() => console.log('Change location pressed')}
+                >
                     <MapPin size={20} color={COLORS.primary} />
                     <View>
                         <Text style={styles.locationTitle}>Delivery to</Text>
                         <Text style={styles.locationText}>Home - Dwarka Sector 12</Text>
                     </View>
-                </View>
+                </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.profileBtn}
                     onPress={() => navigation.navigate(isAuthenticated ? 'Profile' : 'Login')}

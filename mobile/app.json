@@ -24,6 +24,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "42a8d314-9f6b-44a0-940c-142755eece37"
+      }
+    },
+    "owner": "abhishekarora15",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/42a8d314-9f6b-44a0-940c-142755eece37"
     }
   }
 }
