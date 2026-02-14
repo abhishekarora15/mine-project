@@ -8,10 +8,14 @@ const useRestaurantStore = create((set) => ({
     error: null,
     currentMenu: [],
 
-    fetchRestaurants: async () => {
+    fetchRestaurants: async (lat, lng) => {
         set({ loading: true, error: null });
         try {
-            const response = await axios.get(`${API_URL}/restaurants`);
+            const url = lat && lng
+                ? `${API_URL}/restaurants?lat=${lat}&lng=${lng}&radius=5000`
+                : `${API_URL}/restaurants`;
+
+            const response = await axios.get(url);
             set({
                 restaurants: response.data.data.restaurants,
                 loading: false
@@ -29,7 +33,7 @@ const useRestaurantStore = create((set) => ({
         try {
             const response = await axios.get(`${API_URL}/restaurants/${restaurantId}/menu`);
             set({
-                currentMenu: response.data.data.menu || [],
+                currentMenu: response.data.data.menuItems || [],
                 loading: false
             });
         } catch (err) {

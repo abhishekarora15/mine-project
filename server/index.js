@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 const http = require('http');
 const { Server } = require('socket.io');
+const { success, error } = require('./utils/responseFormatter');
 
 // Load environment variables
 dotenv.config();
@@ -62,25 +63,29 @@ app.use('/api/orders', orderRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date() });
+  success(res, { status: 'OK', timestamp: new Date() });
 });
 
 // Root Route
 app.get('/api', (req, res) => {
-  res.json({ message: 'Welcome to Food Delivery API' });
+  success(res, { message: 'Welcome to Food Delivery API' });
 });
 
 // Seed Data Route (Temporary)
 const seedData = require('./utils/seedData');
 app.post('/api/seed', async (req, res) => {
-  const result = await seedData();
-  res.json(result);
+  try {
+    const result = await seedData();
+    success(res, result);
+  } catch (err) {
+    error(res, err.message, 500);
+  }
 });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ status: 'error', message: err.message || 'Something went wrong!' });
+  error(res, err.message || 'Something went wrong!', err.status || 500);
 });
 
 // Start Server

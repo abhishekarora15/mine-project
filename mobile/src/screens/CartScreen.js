@@ -10,9 +10,11 @@ import useAuthStore from '../store/authStore';
 import { ActivityIndicator } from 'react-native';
 
 const CartScreen = ({ navigation }) => {
-    const { items, restaurant, addItem, removeItem, clearCart, getTotal } = useCartStore();
+    const { items, restaurant, addItem, removeItem, updateQuantity, clearCart, getBillDetails } = useCartStore();
     const { token } = useAuthStore();
     const [isPlacingOrder, setIsPlacingOrder] = React.useState(false);
+
+    const { subtotal, tax, deliveryFee, total } = getBillDetails();
 
     const handlePlaceOrder = async () => {
         if (!token) {
@@ -28,13 +30,18 @@ const CartScreen = ({ navigation }) => {
             const orderData = {
                 restaurantId: restaurant._id,
                 items: items.map(i => ({
-                    menuItemId: i._id || i.id,
+                    productId: i._id,
                     name: i.name,
                     quantity: i.quantity,
                     price: i.price
                 })),
-                totalAmount: getTotal() + 30, // Including fee
-                deliveryAddress: 'Home - Dwarka Sector 12', // Static for now
+                totalAmount: total,
+                deliveryFee: deliveryFee,
+                deliveryAddress: {
+                    street: 'Home - Dwarka Sector 12',
+                    city: 'New Delhi',
+                    coordinates: { lat: 28.5921, lng: 77.0460 }
+                }
             };
 
             const response = await axios.post(`${API_URL}/orders`, orderData, {
@@ -43,6 +50,7 @@ const CartScreen = ({ navigation }) => {
 
             if (response.data.status === 'success') {
                 clearCart();
+                // Normally you'd trigger Razorpay here, but we'll simulate success for now
                 navigation.navigate('OrderTracking', { orderId: response.data.data.order._id });
             }
         } catch (err) {
@@ -99,33 +107,37 @@ const CartScreen = ({ navigation }) => {
                             <Text style={styles.itemName}>{item.name}</Text>
                         </View>
                         <View style={styles.stepper}>
-                            <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.stepperBtn}>
+                            <TouchableOpacity onPress={() => updateQuantity(item._id, -1)} style={styles.stepperBtn}>
                                 <Minus size={14} color={COLORS.primary} />
                             </TouchableOpacity>
                             <Text style={styles.stepperText}>{item.quantity}</Text>
-                            <TouchableOpacity onPress={() => addItem(item, restaurant)} style={styles.stepperBtn}>
+                            <TouchableOpacity onPress={() => updateQuantity(item._id, 1)} style={styles.stepperBtn}>
                                 <Plus size={14} color={COLORS.primary} />
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
                     </View>
                 )}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item._id}
                 ListFooterComponent={
                     <View style={styles.footer}>
                         <View style={styles.billDetails}>
                             <Text style={styles.billTitle}>Bill Details</Text>
                             <View style={styles.billRow}>
                                 <Text style={styles.billLabel}>Item Total</Text>
-                                <Text style={styles.billValue}>₹{getTotal()}</Text>
+                                <Text style={styles.billValue}>₹{subtotal}</Text>
                             </View>
                             <View style={styles.billRow}>
                                 <Text style={styles.billLabel}>Delivery Fee</Text>
-                                <Text style={styles.billValue}>₹30</Text>
+                                <Text style={styles.billValue}>₹{deliveryFee}</Text>
+                            </View>
+                            <View style={styles.billRow}>
+                                <Text style={styles.billLabel}>Taxes & Charges</Text>
+                                <Text style={styles.billValue}>₹{tax.toFixed(2)}</Text>
                             </View>
                             <View style={[styles.billRow, styles.totalRow]}>
                                 <Text style={styles.totalLabel}>To Pay</Text>
-                                <Text style={styles.totalValue}>₹{getTotal() + 30}</Text>
+                                <Text style={styles.totalValue}>₹{total.toFixed(2)}</Text>
                             </View>
                         </View>
                     </View>
@@ -141,7 +153,7 @@ const CartScreen = ({ navigation }) => {
                     {isPlacingOrder ? (
                         <ActivityIndicator color="#000" />
                     ) : (
-                        <Text style={styles.checkoutBtnText}>Proceed to Pay</Text>
+                        <Text style={styles.checkoutBtnText}>Proceed to Pay ₹{total.toFixed(2)}</Text>
                     )}
                 </TouchableOpacity>
             </View>

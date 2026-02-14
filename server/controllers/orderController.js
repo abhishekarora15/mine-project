@@ -1,59 +1,74 @@
 const Order = require('../models/Order');
-const MenuItem = require('../models/MenuItem');
+const { success, error } = require('../utils/responseFormatter');
+const razorpay = require('../utils/razorpay');
 
 exports.createOrder = async (req, res) => {
     try {
-        const { restaurantId, items, totalAmount, deliveryAddress } = req.body;
+        const { restaurantId, items, totalAmount, deliveryAddress, deliveryFee } = req.body;
+
+        // 1) Handle Razorpay Order Creation if needed
+        const razorpayOrder = await razorpay.createOrder(totalAmount);
 
         const newOrder = await Order.create({
             customerId: req.user._id,
             restaurantId,
             items,
             totalAmount,
+            deliveryFee,
             deliveryAddress,
+            paymentId: razorpayOrder.id,
         });
 
         // Notify restaurant via Socket.io
         req.io.to(restaurantId).emit('new_order', newOrder);
 
-        res.status(201).json({
-            status: 'success',
-            data: {
-                order: newOrder,
-            },
-        });
+        success(res, { order: newOrder, razorpayOrder }, 201);
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
+    }
+};
+
+exports.verifyPayment = async (req, res) => {
+    try {
+        const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+        const isValid = razorpay.verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+
+        if (!isValid) {
+            await Order.findByIdAndUpdate(orderId, { paymentStatus: 'FAILED' });
+            return error(res, 'Invalid payment signature', 400);
+        }
+
+        const updatedOrder = await Order.findByIdAndUpdate(
+            orderId,
+            {
+                paymentStatus: 'PAID',
+                status: 'CONFIRMED'
+            },
+            { new: true }
+        );
+
+        success(res, { order: updatedOrder });
+    } catch (err) {
+        error(res, err.message, 400);
     }
 };
 
 exports.getMyOrders = async (req, res) => {
     try {
         const orders = await Order.find({ customerId: req.user._id }).sort('-createdAt');
-        res.status(200).json({
-            status: 'success',
-            results: orders.length,
-            data: {
-                orders,
-            },
-        });
+        success(res, { orders });
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
     }
 };
 
 exports.getRestaurantOrders = async (req, res) => {
     try {
         const orders = await Order.find({ restaurantId: req.params.restaurantId }).sort('-createdAt');
-        res.status(200).json({
-            status: 'success',
-            results: orders.length,
-            data: {
-                orders,
-            },
-        });
+        success(res, { orders });
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
     }
 };
 
@@ -63,22 +78,13 @@ exports.updateOrderStatus = async (req, res) => {
         const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
 
         if (!order) {
-            return res.status(404).json({ status: 'fail', message: 'No order found' });
+            return error(res, 'No order found', 404);
         }
 
-        // Emit socket event for real-time tracking
         req.io.to(order._id.toString()).emit('order_status_update', order);
 
-        // If status is OUT_FOR_DELIVERY, notify customer room specifically if needed
-        // req.io.to(order.customerId.toString()).emit('delivery_update', order);
-
-        res.status(200).json({
-            status: 'success',
-            data: {
-                order,
-            },
-        });
+        success(res, { order });
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
     }
 };

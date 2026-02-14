@@ -1,8 +1,9 @@
 const Restaurant = require('../models/Restaurant');
+const { success, error } = require('../utils/responseFormatter');
 
 exports.createRestaurant = async (req, res) => {
     try {
-        const { name, description, cuisineTypes, location, isCloudKitchen } = req.body;
+        const { name, description, cuisineTypes, location, isCloudKitchen, image } = req.body;
 
         const newRestaurant = await Restaurant.create({
             ownerId: req.user._id,
@@ -11,31 +12,42 @@ exports.createRestaurant = async (req, res) => {
             cuisineTypes,
             location,
             isCloudKitchen,
+            image
         });
 
-        res.status(201).json({
-            status: 'success',
-            data: {
-                restaurant: newRestaurant,
-            },
-        });
+        success(res, { restaurant: newRestaurant }, 201);
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
     }
 };
 
 exports.getAllRestaurants = async (req, res) => {
     try {
-        const restaurants = await Restaurant.find();
-        res.status(200).json({
-            status: 'success',
-            results: restaurants.length,
-            data: {
-                restaurants,
-            },
-        });
+        const { lat, lng, radius = 5000, cuisine } = req.query; // radius in meters
+        let query = {};
+
+        // 1) Location-based filtering (Geospatial)
+        if (lat && lng) {
+            query.location = {
+                $near: {
+                    $geometry: {
+                        type: 'Point',
+                        coordinates: [parseFloat(lng), parseFloat(lat)],
+                    },
+                    $maxDistance: parseInt(radius),
+                },
+            };
+        }
+
+        // 2) Cuisine filtering
+        if (cuisine) {
+            query.cuisineTypes = { $in: cuisine.split(',') };
+        }
+
+        const restaurants = await Restaurant.find(query);
+        success(res, { restaurants });
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
     }
 };
 
@@ -43,16 +55,11 @@ exports.getRestaurant = async (req, res) => {
     try {
         const restaurant = await Restaurant.findById(req.params.id);
         if (!restaurant) {
-            return res.status(404).json({ status: 'fail', message: 'No restaurant found with that ID' });
+            return error(res, 'No restaurant found with that ID', 404);
         }
-        res.status(200).json({
-            status: 'success',
-            data: {
-                restaurant,
-            },
-        });
+        success(res, { restaurant });
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
     }
 };
 
@@ -65,16 +72,11 @@ exports.updateRestaurant = async (req, res) => {
         );
 
         if (!restaurant) {
-            return res.status(404).json({ status: 'fail', message: 'No restaurant found or you are not the owner' });
+            return error(res, 'No restaurant found or you are not the owner', 404);
         }
 
-        res.status(200).json({
-            status: 'success',
-            data: {
-                restaurant,
-            },
-        });
+        success(res, { restaurant });
     } catch (err) {
-        res.status(400).json({ status: 'error', message: err.message });
+        error(res, err.message, 400);
     }
 };

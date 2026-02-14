@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { error } = require('../utils/responseFormatter');
 
 exports.protect = async (req, res, next) => {
     try {
@@ -9,27 +10,27 @@ exports.protect = async (req, res, next) => {
         }
 
         if (!token) {
-            return res.status(401).json({ status: 'fail', message: 'You are not logged in! Please log in to get access.' });
+            return error(res, 'You are not logged in! Please log in to get access.', 401);
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
 
         const currentUser = await User.findById(decoded.id);
         if (!currentUser) {
-            return res.status(401).json({ status: 'fail', message: 'The user belonging to this token no longer exists.' });
+            return error(res, 'The user belonging to this token no longer exists.', 401);
         }
 
         req.user = currentUser;
         next();
     } catch (err) {
-        res.status(401).json({ status: 'error', message: 'Invalid token or session expired' });
+        error(res, 'Invalid token or session expired', 401);
     }
 };
 
 exports.restrictTo = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ status: 'fail', message: 'You do not have permission to perform this action' });
+            return error(res, 'You do not have permission to perform this action', 403);
         }
         next();
     };

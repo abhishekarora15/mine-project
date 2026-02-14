@@ -44,9 +44,26 @@ const HomeScreen = ({ navigation }) => {
     const { address, fetchLocation } = useLocationStore();
 
     React.useEffect(() => {
-        fetchRestaurants();
-        fetchLocation();
+        const loadInitialData = async () => {
+            await fetchLocation();
+            // Restaurants will be fetched by the second useEffect when location updates
+        };
+        loadInitialData();
     }, []);
+
+    React.useEffect(() => {
+        if (location?.coords) {
+            fetchRestaurants(location.coords.latitude, location.coords.longitude);
+        }
+    }, [location]);
+
+    const handleRefresh = () => {
+        if (location?.coords) {
+            fetchRestaurants(location.coords.latitude, location.coords.longitude);
+        } else {
+            fetchRestaurants();
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -79,7 +96,7 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={loading} onRefresh={fetchRestaurants} tintColor={COLORS.primary} />
+                    <RefreshControl refreshing={loading} onRefresh={handleRefresh} tintColor={COLORS.primary} />
                 }
             >
                 {/* Search Bar */}
