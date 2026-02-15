@@ -6,15 +6,23 @@ import useCartStore from '../store/cartStore';
 import useRestaurantStore from '../store/restaurantStore';
 
 const MenuItem = ({ item, restaurant }) => {
-    const { addItem, removeItem, items } = useCartStore();
-    const cartItem = items.find(i => i.id === (item._id || item.id));
+    const { addItem, updateQuantity, items } = useCartStore();
+    const cartItem = items.find(i => i._id === item._id);
     const quantity = cartItem ? cartItem.quantity : 0;
+
+    const handleAdd = () => {
+        addItem(item, restaurant);
+    };
+
+    const handleUpdateQuantity = (delta) => {
+        updateQuantity(item._id, delta);
+    };
 
     return (
         <View style={styles.menuItem}>
             <View style={styles.menuItemInfo}>
                 <View style={styles.vegBadge}>
-                    <View style={[styles.vegCircle, { backgroundColor: item.isVeg ? '#008000' : '#8B0000' }]} />
+                    <View style={[styles.vegCircle, { backgroundColor: item.isVeg ? COLORS.success : COLORS.error }]} />
                 </View>
                 <Text style={styles.menuItemName}>{item.name}</Text>
                 <Text style={styles.menuItemPrice}>₹{item.price}</Text>
@@ -25,16 +33,16 @@ const MenuItem = ({ item, restaurant }) => {
                 <View style={styles.addButtonContainer}>
                     {quantity > 0 ? (
                         <View style={styles.stepper}>
-                            <TouchableOpacity onPress={() => removeItem(item._id || item.id)} style={styles.stepperBtn}>
+                            <TouchableOpacity onPress={() => handleUpdateQuantity(-1)} style={styles.stepperBtn}>
                                 <Minus size={16} color={COLORS.primary} />
                             </TouchableOpacity>
                             <Text style={styles.stepperText}>{quantity}</Text>
-                            <TouchableOpacity onPress={() => addItem(item, restaurant)} style={styles.stepperBtn}>
+                            <TouchableOpacity onPress={() => handleUpdateQuantity(1)} style={styles.stepperBtn}>
                                 <Plus size={16} color={COLORS.primary} />
                             </TouchableOpacity>
                         </View>
                     ) : (
-                        <TouchableOpacity onPress={() => addItem(item, restaurant)} style={styles.addBtn}>
+                        <TouchableOpacity onPress={handleAdd} style={styles.addBtn}>
                             <Text style={styles.addBtnText}>ADD</Text>
                         </TouchableOpacity>
                     )}
@@ -46,8 +54,10 @@ const MenuItem = ({ item, restaurant }) => {
 
 const RestaurantDetailsScreen = ({ route, navigation }) => {
     const { restaurant } = route.params;
-    const { items, getTotal } = useCartStore();
+    const { items, getBillDetails } = useCartStore();
     const { currentMenu, loading, fetchRestaurantMenu } = useRestaurantStore();
+
+    const { total } = getBillDetails();
 
     React.useEffect(() => {
         fetchRestaurantMenu(restaurant._id);
@@ -56,7 +66,7 @@ const RestaurantDetailsScreen = ({ route, navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
+                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                     <ChevronLeft size={24} color={COLORS.text} />
                 </TouchableOpacity>
                 <View style={styles.headerActions}>
@@ -67,24 +77,27 @@ const RestaurantDetailsScreen = ({ route, navigation }) => {
             </View>
 
             {loading ? (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
             ) : (
                 <FlatList
                     ListHeaderComponent={
-                        <View style={styles.restaurantInfo}>
-                            <Text style={styles.title}>{restaurant.name}</Text>
-                            <Text style={styles.subtitle}>{restaurant.cuisineTypes?.join(' • ') || 'Various'}</Text>
-                            <View style={styles.metaInfo}>
-                                <View style={styles.metaItem}>
-                                    <Star size={16} color={COLORS.success} fill={COLORS.success} />
-                                    <Text style={styles.metaText}>{restaurant.rating || '4.5'} (100+ ratings)</Text>
+                        <View>
+                            <Image source={{ uri: restaurant.image || 'https://images.unsplash.com/photo-1550547660-d9450f859349' }} style={styles.restaurantBanner} />
+                            <View style={styles.restaurantInfo}>
+                                <Text style={styles.title}>{restaurant.name}</Text>
+                                <Text style={styles.subtitle}>{restaurant.cuisineTypes?.join(' • ') || 'Various'}</Text>
+                                <View style={styles.metaInfo}>
+                                    <View style={styles.metaItem}>
+                                        <Star size={16} color={COLORS.primary} fill={COLORS.primary} />
+                                        <Text style={styles.metaText}>{restaurant.rating || '4.0'}</Text>
+                                    </View>
+                                    <Text style={styles.metaDot}>•</Text>
+                                    <Text style={styles.metaText}>30-35 mins</Text>
                                 </View>
-                                <Text style={styles.metaDot}>•</Text>
-                                <Text style={styles.metaText}>25-30 mins</Text>
+                                <View style={styles.divider} />
                             </View>
-                            <View style={styles.divider} />
                         </View>
                     }
                     data={Object.entries(
@@ -98,7 +111,7 @@ const RestaurantDetailsScreen = ({ route, navigation }) => {
                         <View style={styles.categorySection}>
                             <Text style={styles.categoryTitle}>{item.category} ({item.items.length})</Text>
                             {item.items.map(menuItem => (
-                                <MenuItem key={menuItem._id || menuItem.id} item={menuItem} restaurant={restaurant} />
+                                <MenuItem key={menuItem._id} item={menuItem} restaurant={restaurant} />
                             ))}
                         </View>
                     )}
@@ -113,7 +126,7 @@ const RestaurantDetailsScreen = ({ route, navigation }) => {
                     <TouchableOpacity style={styles.cartBar} onPress={() => navigation.navigate('Cart')}>
                         <View>
                             <Text style={styles.cartCount}>{items.length} ITEM{items.length > 1 ? 'S' : ''}</Text>
-                            <Text style={styles.cartTotal}>₹{getTotal()} plus taxes</Text>
+                            <Text style={styles.cartTotal}>₹{Math.round(total)} plus taxes</Text>
                         </View>
                         <View style={styles.viewCartAction}>
                             <Text style={styles.viewCartText}>View Cart</Text>
@@ -131,17 +144,49 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     header: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
         padding: SPACING.md,
         alignItems: 'center',
+    },
+    backBtn: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 20,
+        padding: 8,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
     },
     headerActions: {
         flexDirection: 'row',
         gap: SPACING.md,
     },
     headerIcon: {
-        padding: 4,
+        backgroundColor: COLORS.surface,
+        borderRadius: 20,
+        padding: 8,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    restaurantBanner: {
+        width: '100%',
+        height: 200,
+        resizeMode: 'cover',
     },
     restaurantInfo: {
         paddingHorizontal: SPACING.md,
