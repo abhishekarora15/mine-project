@@ -61,6 +61,13 @@ const ProfileScreen = ({ navigation }) => {
                         title="My Orders"
                         onPress={() => navigation.navigate('OrdersHistory')}
                     />
+                    {user?.role === 'delivery' && (
+                        <ProfileOption
+                            icon={Package} // Can use better icon if available, but Package is fine
+                            title="Delivery Dashboard"
+                            onPress={() => navigation.navigate('DeliveryDashboard')}
+                        />
+                    )}
                     <ProfileOption
                         icon={CreditCard}
                         title="Payment Methods"

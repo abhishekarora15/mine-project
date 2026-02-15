@@ -12,6 +12,9 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import OrderConfirmationScreen from './src/screens/OrderConfirmationScreen';
 import OrdersHistoryScreen from './src/screens/OrdersHistoryScreen';
+import DeliveryDashboardScreen from './src/screens/DeliveryDashboard';
+import AssignedOrdersScreen from './src/screens/AssignedOrders';
+import EarningsScreen from './src/screens/EarningsScreen';
 import useAuthStore from './src/store/authStore';
 
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
@@ -19,7 +22,7 @@ import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from '@e
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const { loadUser } = useAuthStore();
+  const { loadUser, user } = useAuthStore();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
@@ -39,9 +42,11 @@ export default function App() {
     );
   }
 
+  const initialRoute = user?.role === 'delivery' ? 'DeliveryDashboard' : 'Home';
+
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="RestaurantDetails" component={RestaurantDetailsScreen} />
         <Stack.Screen name="Cart" component={CartScreen} />
@@ -51,6 +56,11 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+
+        {/* Delivery Screens */}
+        <Stack.Screen name="DeliveryDashboard" component={DeliveryDashboardScreen} />
+        <Stack.Screen name="AssignedOrders" component={AssignedOrdersScreen} />
+        <Stack.Screen name="Earnings" component={EarningsScreen} />
       </Stack.Navigator>
       <StatusBar style="light" />
     </NavigationContainer>

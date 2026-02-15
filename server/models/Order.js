@@ -52,9 +52,13 @@ const orderSchema = new mongoose.Schema({
             lng: Number
         }
     },
+    deliveryPartnerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    },
     orderStatus: {
         type: String,
-        enum: ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'],
+        enum: ['pending', 'confirmed', 'preparing', 'picked_up', 'out_for_delivery', 'delivered', 'cancelled'],
         default: 'pending',
     },
     paymentStatus: {
@@ -68,6 +72,7 @@ const orderSchema = new mongoose.Schema({
         default: 'RAZORPAY',
     },
     paymentId: String,
+    totalEarnings: Number, // Commission for delivery partner
     createdAt: {
         type: Date,
         default: Date.now,

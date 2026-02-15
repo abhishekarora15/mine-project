@@ -4,6 +4,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const { success } = require('../utils/responseFormatter');
 const razorpay = require('../utils/razorpay');
+const { assignDeliveryPartner } = require('../utils/assignmentLogic');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
     const { deliveryAddress, paymentMethod = 'RAZORPAY' } = req.body;
@@ -14,8 +15,7 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         return next(new AppError('Your cart is empty', 400));
     }
 
-    // 2) Verify totals (optional but good for security if we were taking them from body)
-    // Here we use backend cart totals for maximum security
+    // 2) Verify totals
     const { items, restaurantId, subtotal, deliveryCharge, tax, total } = cart;
 
     // 3) Handle Razorpay if selected
@@ -26,7 +26,7 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         paymentId = razorpayOrder.id;
     }
 
-    // 4) Create the order (Snapshotting items)
+    // 4) Create the order
     const newOrder = await Order.create({
         userId: req.user._id,
         restaurantId,
@@ -46,10 +46,7 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         paymentId
     });
 
-    // 5) DO NOT clear the cart here anymore. 
-    // We clear it only after successful verification.
-
-    // 6) Notify restaurant via Socket.io (if implemented)
+    // 5) Notify restaurant via Socket.io
     if (req.io) {
         req.io.to(restaurantId.toString()).emit('new_order', newOrder);
     }
@@ -64,7 +61,6 @@ exports.verifyPayment = catchAsync(async (req, res, next) => {
 
     if (!isValid) {
         await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
-        console.error(`[Payment Verification Failed] Order: ${orderId}, RazorpayOrder: ${razorpay_order_id}`);
         return next(new AppError('Invalid payment signature', 400));
     }
 
@@ -77,8 +73,11 @@ exports.verifyPayment = catchAsync(async (req, res, next) => {
         { new: true }
     );
 
-    // CLEAR CART ONLY ON SUCCESS
+    // CLEAR CART
     await Cart.findOneAndDelete({ userId: req.user._id });
+
+    // AUTO ASSIGN DELIVERY PARTNER
+    await assignDeliveryPartner(orderId);
 
     success(res, { order: updatedOrder });
 });
@@ -89,12 +88,11 @@ exports.getMyOrders = catchAsync(async (req, res, next) => {
 });
 
 exports.getOrder = catchAsync(async (req, res, next) => {
-    const order = await Order.findById(req.params.id).populate('restaurantId');
+    const order = await Order.findById(req.params.id).populate('restaurantId').populate('deliveryPartnerId', 'name phone');
     if (!order) {
         return next(new AppError('No order found with that ID', 404));
     }
 
-    // Authorization: User can see their own order
     if (order.userId.toString() !== req.user._id.toString() && req.user.role === 'customer') {
         return next(new AppError('You do not have permission to view this order', 403));
     }
@@ -108,6 +106,11 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
 
     if (!order) {
         return next(new AppError('No order found with that ID', 404));
+    }
+
+    // AUTO ASSIGN if status becomes confirmed (e.g. by manual admin action)
+    if (status === 'confirmed' && !order.deliveryPartnerId) {
+        await assignDeliveryPartner(order._id);
     }
 
     if (req.io) {

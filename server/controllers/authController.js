@@ -22,11 +22,17 @@ const createSendToken = (user, statusCode, res) => {
     return success(res, { token, user }, statusCode);
 };
 
+const DeliveryProfile = require('../models/DeliveryProfile');
+
 exports.register = catchAsync(async (req, res, next) => {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, vehicleType, vehicleNumber } = req.body;
 
     if (!name || !email || !phone || !password) {
         return next(new AppError('Please provide all required fields', 400));
+    }
+
+    if (role === 'delivery' && (!vehicleType || !vehicleNumber)) {
+        return next(new AppError('Please provide vehicle type and number for delivery partners', 400));
     }
 
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
@@ -39,8 +45,18 @@ exports.register = catchAsync(async (req, res, next) => {
         email,
         phone,
         password,
-        role,
+        role: role || 'customer',
     });
+
+    // Create delivery profile if role is 'delivery'
+    if (role === 'delivery') {
+        await DeliveryProfile.create({
+            userId: newUser._id,
+            phone: newUser.phone,
+            vehicleType,
+            vehicleNumber
+        });
+    }
 
     createSendToken(newUser, 201, res);
 });
