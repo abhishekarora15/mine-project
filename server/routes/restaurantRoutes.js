@@ -13,6 +13,7 @@ router.get('/:restaurantId/menu', menuController.getRestaurantMenu);
 // Protected routes (Owner/Admin)
 router.use(protect);
 
+router.get('/my', restrictTo('RESTAURANT_OWNER', 'ADMIN'), restaurantController.getMyRestaurant);
 router.post('/', restrictTo('RESTAURANT_OWNER', 'ADMIN'), restaurantController.createRestaurant);
 router.patch('/:id', restrictTo('RESTAURANT_OWNER', 'ADMIN'), restaurantController.updateRestaurant);
 

@@ -66,3 +66,11 @@ exports.updateRestaurant = catchAsync(async (req, res, next) => {
 
     success(res, { restaurant });
 });
+
+exports.getMyRestaurant = catchAsync(async (req, res, next) => {
+    const restaurant = await Restaurant.findOne({ ownerId: req.user._id });
+    if (!restaurant) {
+        return next(new AppError('No restaurant found for this owner', 404));
+    }
+    success(res, { restaurant });
+});

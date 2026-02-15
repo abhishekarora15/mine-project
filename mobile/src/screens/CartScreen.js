@@ -8,7 +8,8 @@ import { API_URL } from '../constants/config';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import { ActivityIndicator } from 'react-native';
-import RazorpayCheckout from 'react-native-razorpay';
+// Removed static import to prevent startup crash in Expo Go
+// import RazorpayCheckout from 'react-native-razorpay';
 import { RAZORPAY_KEY_ID } from '../constants/config';
 
 const CartScreen = ({ navigation }) => {
@@ -66,6 +67,8 @@ const CartScreen = ({ navigation }) => {
                     },
                     theme: { color: COLORS.primary }
                 };
+
+                const RazorpayCheckout = require('react-native-razorpay').default;
 
                 RazorpayCheckout.open(options).then(async (data) => {
                     // STEP 3: Verify Payment on Backend

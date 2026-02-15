@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -30,7 +31,12 @@ export default function App() {
   }, []);
 
   if (!fontsLoaded) {
-    return null; // Keep screen white until essentials are ready, or show a splash
+    console.log('Waiting for fonts to load...');
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <Text style={{ color: '#FFF' }}>Loading Food App...</Text>
+      </View>
+    );
   }
 
   return (
