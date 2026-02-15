@@ -4,8 +4,14 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 const http = require('http');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 const { Server } = require('socket.io');
+
 const { success, error } = require('./utils/responseFormatter');
+const AppError = require('./utils/appError');
 
 // Load environment variables
 dotenv.config();
@@ -14,15 +20,38 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*', // In production, specify the allowed origins
+    origin: '*',
     methods: ['GET', 'POST'],
   },
 });
 
-// Middleware
+// GLOBAL MIDDLEWARE
+// Set security HTTP headers
+app.use(helmet());
+
+// Development logging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// Limit requests from same API 
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: 'Too many requests from this IP, please try again in an hour!'
+});
+app.use('/api', limiter);
+
+// Body parser, reading data from body into req.body
+app.use(express.json({ limit: '10kb' }));
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
+app.use(xss());
+
 app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
 
 // Database Connection
 const PORT = process.env.PORT || 5000;
@@ -31,20 +60,6 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/food_deliv
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
-
-// Socket.io Connection
-io.on('connection', (socket) => {
-  console.log('🔗 A user connected:', socket.id);
-
-  socket.on('join_order_room', (orderId) => {
-    socket.join(orderId);
-    console.log(`👤 User joined order room: ${orderId}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('🔌 User disconnected');
-  });
-});
 
 // Inject Socket.io into req
 app.use((req, res, next) => {
@@ -66,26 +81,32 @@ app.get('/api/health', (req, res) => {
   success(res, { status: 'OK', timestamp: new Date() });
 });
 
-// Root Route
-app.get('/api', (req, res) => {
-  success(res, { message: 'Welcome to Food Delivery API' });
-});
-
-// Seed Data Route (Temporary)
-const seedData = require('./utils/seedData');
-app.post('/api/seed', async (req, res) => {
-  try {
-    const result = await seedData();
-    success(res, result);
-  } catch (err) {
-    error(res, err.message, 500);
-  }
+// 404 Handler
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  error(res, err.message || 'Something went wrong!', err.status || 500);
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
+  if (process.env.NODE_ENV === 'development') {
+    res.status(err.statusCode).json({
+      status: err.status,
+      error: err,
+      message: err.message,
+      stack: err.stack
+    });
+  } else {
+    // Production: Don't leak error details
+    if (err.isOperational) {
+      error(res, err.message, err.statusCode);
+    } else {
+      console.error('ERROR 💥', err);
+      error(res, 'Something went very wrong!', 500);
+    }
+  }
 });
 
 // Start Server
