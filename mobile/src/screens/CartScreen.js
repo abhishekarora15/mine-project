@@ -32,20 +32,12 @@ const CartScreen = ({ navigation }) => {
         setIsPlacingOrder(true);
         try {
             const orderData = {
-                restaurantId: restaurant._id,
-                items: items.map(i => ({
-                    productId: i._id,
-                    name: i.name,
-                    quantity: i.quantity,
-                    price: i.price
-                })),
-                totalAmount: total,
-                deliveryFee: deliveryFee,
                 deliveryAddress: {
                     street: 'Home - Dwarka Sector 12',
                     city: 'New Delhi',
                     coordinates: { lat: 28.5921, lng: 77.0460 }
-                }
+                },
+                paymentMethod: 'RAZORPAY'
             };
 
             const response = await axios.post(`${API_URL}/orders`, orderData, {
@@ -53,9 +45,9 @@ const CartScreen = ({ navigation }) => {
             });
 
             if (response.data.status === 'success') {
-                clearCart();
-                // Normally you'd trigger Razorpay here, but we'll simulate success for now
-                navigation.navigate('OrderTracking', { orderId: response.data.data.order._id });
+                // Clear local items as well (though backend does it, good for sync)
+                useCartStore.setState({ items: [], restaurant: null });
+                navigation.navigate('OrderConfirmation', { order: response.data.data.order });
             }
         } catch (err) {
             Alert.alert('Error', err.response?.data?.message || 'Failed to place order');

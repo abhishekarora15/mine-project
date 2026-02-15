@@ -59,7 +59,7 @@ const ProfileScreen = ({ navigation }) => {
                     <ProfileOption
                         icon={Package}
                         title="My Orders"
-                        onPress={() => console.log('My Orders')}
+                        onPress={() => navigation.navigate('OrdersHistory')}
                     />
                     <ProfileOption
                         icon={CreditCard}

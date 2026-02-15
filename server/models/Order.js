@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-    customerId: {
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
@@ -12,7 +12,7 @@ const orderSchema = new mongoose.Schema({
         required: true,
     },
     items: [{
-        productId: {
+        menuItemId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'MenuItem',
             required: true,
@@ -26,15 +26,23 @@ const orderSchema = new mongoose.Schema({
             type: Number,
             required: true,
         },
-        customizations: [String]
+        subtotal: Number
     }],
-    totalAmount: {
+    subtotal: {
         type: Number,
         required: true,
     },
-    deliveryFee: {
+    deliveryCharge: {
+        type: Number,
+        default: 40,
+    },
+    tax: {
         type: Number,
         default: 0,
+    },
+    totalAmount: {
+        type: Number,
+        required: true,
     },
     deliveryAddress: {
         street: String,
@@ -44,22 +52,22 @@ const orderSchema = new mongoose.Schema({
             lng: Number
         }
     },
-    status: {
+    orderStatus: {
         type: String,
-        enum: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
-        default: 'PENDING',
+        enum: ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'],
+        default: 'pending',
     },
     paymentStatus: {
         type: String,
-        enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
-        default: 'PENDING',
+        enum: ['pending', 'paid', 'failed', 'refunded'],
+        default: 'pending',
+    },
+    paymentMethod: {
+        type: String,
+        enum: ['UPI', 'CARD', 'COD', 'RAZORPAY'],
+        default: 'RAZORPAY',
     },
     paymentId: String,
-    deliveryPartnerId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-    },
-    estimatedDeliveryTime: Date,
     createdAt: {
         type: Date,
         default: Date.now,
