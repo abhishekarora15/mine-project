@@ -8,6 +8,8 @@ import { API_URL } from '../constants/config';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import { ActivityIndicator } from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
+import { RAZORPAY_KEY_ID } from '../constants/config';
 
 const CartScreen = ({ navigation }) => {
     const { items, restaurant, updateQuantity, clearCart, getBillDetails, fetchCart } = useCartStore();
@@ -31,6 +33,7 @@ const CartScreen = ({ navigation }) => {
 
         setIsPlacingOrder(true);
         try {
+            // STEP 1: Create Order on Backend (Returns Razorpay Order ID)
             const orderData = {
                 deliveryAddress: {
                     street: 'Home - Dwarka Sector 12',
@@ -45,12 +48,50 @@ const CartScreen = ({ navigation }) => {
             });
 
             if (response.data.status === 'success') {
-                // Clear local items as well (though backend does it, good for sync)
-                useCartStore.setState({ items: [], restaurant: null });
-                navigation.navigate('OrderConfirmation', { order: response.data.data.order });
+                const { order, razorpayOrder } = response.data.data;
+
+                // STEP 2: Open Razorpay Checkout
+                const options = {
+                    description: 'Order Payment',
+                    image: 'https://i.imgur.com/3g7u6qn.png',
+                    currency: 'INR',
+                    key: RAZORPAY_KEY_ID,
+                    amount: razorpayOrder.amount,
+                    name: 'Food App',
+                    order_id: razorpayOrder.id,
+                    prefill: {
+                        email: 'user@example.com',
+                        contact: '9999999999',
+                        name: 'Test User'
+                    },
+                    theme: { color: COLORS.primary }
+                };
+
+                RazorpayCheckout.open(options).then(async (data) => {
+                    // STEP 3: Verify Payment on Backend
+                    try {
+                        const verifyResponse = await axios.post(`${API_URL}/orders/verify-payment`, {
+                            orderId: order._id,
+                            razorpay_order_id: data.razorpay_order_id,
+                            razorpay_payment_id: data.razorpay_payment_id,
+                            razorpay_signature: data.razorpay_signature
+                        }, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+
+                        if (verifyResponse.data.status === 'success') {
+                            useCartStore.setState({ items: [], restaurant: null });
+                            navigation.navigate('OrderConfirmation', { order: verifyResponse.data.data.order });
+                        }
+                    } catch (verifyErr) {
+                        Alert.alert('Payment Verification Failed', verifyErr.response?.data?.message || 'Please contact support.');
+                    }
+                }).catch((error) => {
+                    Alert.alert('Payment Cancelled', 'Your payment was not completed.');
+                });
             }
         } catch (err) {
-            Alert.alert('Error', err.response?.data?.message || 'Failed to place order');
+            Alert.alert('Error', err.response?.data?.message || 'Failed to initiate order');
         } finally {
             setIsPlacingOrder(false);
         }

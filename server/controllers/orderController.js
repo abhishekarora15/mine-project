@@ -46,8 +46,8 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         paymentId
     });
 
-    // 5) Clear the cart after successful order creation
-    await Cart.findOneAndDelete({ userId: req.user._id });
+    // 5) DO NOT clear the cart here anymore. 
+    // We clear it only after successful verification.
 
     // 6) Notify restaurant via Socket.io (if implemented)
     if (req.io) {
@@ -64,6 +64,7 @@ exports.verifyPayment = catchAsync(async (req, res, next) => {
 
     if (!isValid) {
         await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
+        console.error(`[Payment Verification Failed] Order: ${orderId}, RazorpayOrder: ${razorpay_order_id}`);
         return next(new AppError('Invalid payment signature', 400));
     }
 
@@ -75,6 +76,9 @@ exports.verifyPayment = catchAsync(async (req, res, next) => {
         },
         { new: true }
     );
+
+    // CLEAR CART ONLY ON SUCCESS
+    await Cart.findOneAndDelete({ userId: req.user._id });
 
     success(res, { order: updatedOrder });
 });
