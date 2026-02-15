@@ -6,7 +6,17 @@ import { StatusBar } from 'expo-status-bar';
 import HomeScreen from './src/screens/HomeScreen';
 import RestaurantDetailsScreen from './src/screens/RestaurantDetailsScreen';
 import CartScreen from './src/screens/CartScreen';
-import OrderTrackingScreen from './src/screens/OrderTrackingScreen';
+// Temporarily use a simpler tracking screen to see if Maps is the cause
+// import OrderTrackingScreen from './src/screens/OrderTrackingScreen'; 
+const OrderTrackingScreen = (props) => (
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' }}>
+    <Text style={{ color: '#FFF' }}>Tracking Screen (Maps Disabled for Debugging)</Text>
+    <TouchableOpacity onPress={() => props.navigation.goBack()}>
+      <Text style={{ color: '#FF9F0D', marginTop: 20 }}>Go Back</Text>
+    </TouchableOpacity>
+  </View>
+);
+
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
