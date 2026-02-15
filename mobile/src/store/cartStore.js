@@ -1,59 +1,105 @@
 import { create } from 'zustand';
+import axios from 'axios';
+import { API_URL } from '../constants/config';
+import useAuthStore from './authStore';
 
 const useCartStore = create((set, get) => ({
     items: [],
     restaurant: null,
     deliveryFee: 40,
     taxRate: 0.05, // 5%
+    loading: false,
+    error: null,
 
-    addItem: (product, restaurant) => {
-        const { items, restaurant: currentRestaurant } = get();
+    fetchCart: async () => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
 
-        // If adding item from a different restaurant, clear cart first
-        if (currentRestaurant && currentRestaurant._id !== restaurant._id) {
-            set({ items: [{ ...product, quantity: 1 }], restaurant });
-            return;
-        }
-
-        const existingItem = items.find(item => item._id === product._id);
-        if (existingItem) {
-            set({
-                items: items.map(item =>
-                    item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
-                ),
-                restaurant,
+        set({ loading: true });
+        try {
+            const response = await axios.get(`${API_URL}/cart`, {
+                headers: { Authorization: `Bearer ${token}` }
             });
-        } else {
-            set({ items: [...items, { ...product, quantity: 1 }], restaurant });
+
+            if (response.data.data.cart) {
+                const { items, restaurantId, deliveryCharge, tax } = response.data.data.cart;
+                set({
+                    items,
+                    restaurant: restaurantId,
+                    deliveryFee: deliveryCharge,
+                    taxRate: 0.05, // Assuming constant for now
+                    loading: false
+                });
+            } else {
+                set({ items: [], restaurant: null, loading: false });
+            }
+        } catch (err) {
+            set({ error: err.response?.data?.message || 'Error fetching cart', loading: false });
         }
     },
 
-    updateQuantity: (productId, delta) => {
-        const { items } = get();
-        const updatedItems = items.map(item => {
-            if (item._id === productId) {
-                const newQty = item.quantity + delta;
-                return newQty > 0 ? { ...item, quantity: newQty } : null;
-            }
-            return item;
-        }).filter(Boolean);
+    addItem: async (product, restaurant) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
 
-        set({
-            items: updatedItems,
-            restaurant: updatedItems.length === 0 ? null : get().restaurant
-        });
+        try {
+            const response = await axios.post(`${API_URL}/cart`, {
+                menuItemId: product._id,
+                restaurantId: restaurant._id,
+                quantity: 1
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            set({
+                items: response.data.data.cart.items,
+                restaurant: response.data.data.cart.restaurantId,
+            });
+        } catch (err) {
+            set({ error: err.response?.data?.message || 'Error adding to cart' });
+        }
     },
 
-    removeItem: (productId) => {
+    updateQuantity: async (menuItemId, delta) => {
+        const { token } = useAuthStore.getState();
         const { items } = get();
-        const updatedItems = items.filter(item => item._id !== productId);
-        set({
-            items: updatedItems,
-            restaurant: updatedItems.length === 0 ? null : get().restaurant
-        });
+        if (!token) return;
+
+        const currentItem = items.find(i => i.menuItemId === menuItemId);
+        if (!currentItem) return;
+
+        const newQuantity = currentItem.quantity + delta;
+
+        try {
+            const response = await axios.patch(`${API_URL}/cart/update`, {
+                menuItemId,
+                quantity: newQuantity
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            set({
+                items: response.data.data.cart.items,
+                restaurant: response.data.data.cart.items.length === 0 ? null : response.data.data.cart.restaurantId
+            });
+        } catch (err) {
+            set({ error: err.response?.data?.message || 'Error updating quantity' });
+        }
     },
 
-    clearCart: () => set({ items: [], restaurant: null }),
+    clearCart: async () => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
+
+        try {
+            await axios.delete(`${API_URL}/cart`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            set({ items: [], restaurant: null });
+        } catch (err) {
+            set({ error: err.response?.data?.message || 'Error clearing cart' });
+        }
+    },
 
     getBillDetails: () => {
         const { items, deliveryFee, taxRate } = get();

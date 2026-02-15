@@ -10,11 +10,15 @@ import useAuthStore from '../store/authStore';
 import { ActivityIndicator } from 'react-native';
 
 const CartScreen = ({ navigation }) => {
-    const { items, restaurant, addItem, removeItem, updateQuantity, clearCart, getBillDetails } = useCartStore();
+    const { items, restaurant, updateQuantity, clearCart, getBillDetails, fetchCart } = useCartStore();
     const { token } = useAuthStore();
     const [isPlacingOrder, setIsPlacingOrder] = React.useState(false);
 
     const { subtotal, tax, deliveryFee, total } = getBillDetails();
+
+    React.useEffect(() => {
+        fetchCart();
+    }, []);
 
     const handlePlaceOrder = async () => {
         if (!token) {
@@ -107,18 +111,18 @@ const CartScreen = ({ navigation }) => {
                             <Text style={styles.itemName}>{item.name}</Text>
                         </View>
                         <View style={styles.stepper}>
-                            <TouchableOpacity onPress={() => updateQuantity(item._id, -1)} style={styles.stepperBtn}>
+                            <TouchableOpacity onPress={() => updateQuantity(item.menuItemId, -1)} style={styles.stepperBtn}>
                                 <Minus size={14} color={COLORS.primary} />
                             </TouchableOpacity>
                             <Text style={styles.stepperText}>{item.quantity}</Text>
-                            <TouchableOpacity onPress={() => updateQuantity(item._id, 1)} style={styles.stepperBtn}>
+                            <TouchableOpacity onPress={() => updateQuantity(item.menuItemId, 1)} style={styles.stepperBtn}>
                                 <Plus size={14} color={COLORS.primary} />
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
                     </View>
                 )}
-                keyExtractor={(item) => item._id}
+                keyExtractor={(item) => item.menuItemId}
                 ListFooterComponent={
                     <View style={styles.footer}>
                         <View style={styles.billDetails}>

@@ -7,7 +7,7 @@ import useRestaurantStore from '../store/restaurantStore';
 
 const MenuItem = ({ item, restaurant }) => {
     const { addItem, updateQuantity, items } = useCartStore();
-    const cartItem = items.find(i => i._id === item._id);
+    const cartItem = items.find(i => i.menuItemId === item._id);
     const quantity = cartItem ? cartItem.quantity : 0;
 
     const handleAdd = () => {
@@ -54,12 +54,13 @@ const MenuItem = ({ item, restaurant }) => {
 
 const RestaurantDetailsScreen = ({ route, navigation }) => {
     const { restaurant } = route.params;
-    const { items, getBillDetails } = useCartStore();
+    const { items, getBillDetails, fetchCart } = useCartStore();
     const { currentMenu, loading, fetchRestaurantMenu } = useRestaurantStore();
 
     const { total } = getBillDetails();
 
     React.useEffect(() => {
+        fetchCart();
         fetchRestaurantMenu(restaurant._id);
     }, [restaurant._id]);
 
