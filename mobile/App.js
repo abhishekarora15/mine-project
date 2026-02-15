@@ -27,6 +27,10 @@ export default function App() {
     loadUser();
   }, []);
 
+  if (!fontsLoaded) {
+    return null; // Keep screen white until essentials are ready, or show a splash
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">

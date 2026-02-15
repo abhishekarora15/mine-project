@@ -40,13 +40,16 @@ const RestaurantCard = ({ item, onPress }) => (
 const HomeScreen = ({ navigation }) => {
     const [isLocationModalVisible, setIsLocationModalVisible] = React.useState(false);
     const { isAuthenticated, user } = useAuthStore();
-    const { restaurants, loading, fetchRestaurants } = useRestaurantStore();
-    const { address, fetchLocation } = useLocationStore();
+    const { restaurants, loading, fetchRestaurants, error: restaurantError } = useRestaurantStore();
+    const { address, location, fetchLocation, error: locationError } = useLocationStore();
 
     React.useEffect(() => {
         const loadInitialData = async () => {
-            await fetchLocation();
-            // Restaurants will be fetched by the second useEffect when location updates
+            try {
+                await fetchLocation();
+            } catch (err) {
+                console.error('Failed to load initial location:', err);
+            }
         };
         loadInitialData();
     }, []);
