@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Linking, ActivityIndicator, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Linking, ActivityIndicator, Alert, Platform } from 'react-native';
+import * as Location from 'expo-location';
 import { MapPin, Navigation, Phone, CheckCircle, Package, Truck } from 'lucide-react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import useDeliveryStore from '../store/deliveryStore';
@@ -89,11 +90,51 @@ const OrderItem = ({ order, onUpdateStatus }) => {
 };
 
 const AssignedOrders = () => {
-    const { assignedOrders, loading, fetchAssignedOrders, updateOrderStatus } = useDeliveryStore();
+    const { assignedOrders, loading, fetchAssignedOrders, updateOrderStatus, updateLocation, startTracking, stopTracking } = useDeliveryStore();
 
-    React.useEffect(() => {
+    useEffect(() => {
         fetchAssignedOrders();
     }, []);
+
+    // Track location if there's any active order
+    useEffect(() => {
+        const activeOrder = assignedOrders.find(o => o.orderStatus === 'out_for_delivery');
+        let locationWatcher = null;
+
+        const startLocationUpdates = async () => {
+            if (activeOrder) {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    Alert.alert('Permission denied', 'Location permission is required for real-time tracking.');
+                    return;
+                }
+
+                startTracking(activeOrder._id);
+
+                locationWatcher = await Location.watchPositionAsync(
+                    {
+                        accuracy: Location.Accuracy.High,
+                        distanceInterval: 10, // Update every 10 meters
+                    },
+                    (location) => {
+                        const { latitude, longitude } = location.coords;
+                        updateLocation(latitude, longitude, activeOrder._id);
+                    }
+                );
+            }
+        };
+
+        startLocationUpdates();
+
+        return () => {
+            if (locationWatcher) {
+                locationWatcher.remove();
+            }
+            if (activeOrder) {
+                stopTracking(activeOrder._id);
+            }
+        };
+    }, [assignedOrders]);
 
     const handleUpdateStatus = (id, status) => {
         Alert.alert(

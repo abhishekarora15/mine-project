@@ -3,6 +3,7 @@ const DeliveryProfile = require('../models/DeliveryProfile');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const { success } = require('../utils/responseFormatter');
+const { emitStatusUpdate } = require('../utils/socketHandler');
 
 exports.getAssignedOrders = catchAsync(async (req, res, next) => {
     const orders = await Order.find({
@@ -48,9 +49,7 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
         await order.save();
     }
 
-    if (req.io) {
-        req.io.to(order._id.toString()).emit('order_status_update', order);
-    }
+    emitStatusUpdate(order._id, status, { order });
 
     success(res, { order });
 });

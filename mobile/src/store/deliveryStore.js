@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
-import { API_URL as BASE_URL } from '../constants/config';
 import useAuthStore from './authStore';
+import { updateDeliveryLocation, initiateSocketConnection, joinOrderRoom, leaveOrderRoom } from '../utils/socket';
 
 const useDeliveryStore = create((set, get) => ({
     stats: {
@@ -68,15 +68,33 @@ const useDeliveryStore = create((set, get) => ({
         }
     },
 
-    updateLocation: async (latitude, longitude) => {
+    updateLocation: async (latitude, longitude, activeOrderId = null) => {
         try {
             const token = useAuthStore.getState().token;
             await axios.patch(`${BASE_URL}/delivery/location`, { latitude, longitude }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
+            // Emit via socket for real-time tracking if on an active order
+            if (activeOrderId) {
+                updateDeliveryLocation({
+                    orderId: activeOrderId,
+                    latitude,
+                    longitude
+                });
+            }
         } catch (err) {
             console.error('Failed to update live location:', err);
         }
+    },
+
+    startTracking: (orderId) => {
+        initiateSocketConnection();
+        joinOrderRoom(orderId);
+    },
+
+    stopTracking: (orderId) => {
+        leaveOrderRoom(orderId);
     }
 }));
 

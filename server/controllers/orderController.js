@@ -5,6 +5,7 @@ const AppError = require('../utils/appError');
 const { success } = require('../utils/responseFormatter');
 const razorpay = require('../utils/razorpay');
 const { assignDeliveryPartner } = require('../utils/assignmentLogic');
+const { emitStatusUpdate } = require('../utils/socketHandler');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
     const { deliveryAddress, paymentMethod = 'RAZORPAY' } = req.body;
@@ -113,9 +114,7 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
         await assignDeliveryPartner(order._id);
     }
 
-    if (req.io) {
-        req.io.to(order._id.toString()).emit('order_status_update', order);
-    }
+    emitStatusUpdate(order._id, status, { order });
 
     success(res, { order });
 });

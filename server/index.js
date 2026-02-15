@@ -16,14 +16,11 @@ const AppError = require('./utils/appError');
 // Load environment variables
 dotenv.config();
 
+const { initSocket } = require('./utils/socketHandler');
+
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
+const io = initSocket(server);
 
 // GLOBAL MIDDLEWARE
 // Set security HTTP headers
