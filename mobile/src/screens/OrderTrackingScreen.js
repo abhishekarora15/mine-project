@@ -36,20 +36,37 @@ const OrderTrackingScreen = ({ navigation, route }) => {
         };
     }, [order?._id]);
 
+    if (!order) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <ChevronLeft size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Order Not Found</Text>
+                    <View style={{ width: 24 }} />
+                </View>
+                <View style={[styles.centerContainer, { flex: 1 }]}>
+                    <Text style={styles.emptyText}>Could not find order details.</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     const getSteps = () => [
         { title: 'Order Placed', completed: true },
-        { title: 'Confirmed', completed: ['confirmed', 'preparing', 'picked_up', 'out_for_delivery', 'delivered'].includes(order.orderStatus) },
-        { title: 'Preparing Food', completed: ['preparing', 'picked_up', 'out_for_delivery', 'delivered'].includes(order.orderStatus) },
-        { title: 'Out for Delivery', completed: ['picked_up', 'out_for_delivery', 'delivered'].includes(order.orderStatus) },
-        { title: 'Delivered', completed: order.orderStatus === 'delivered' },
+        { title: 'Confirmed', completed: ['confirmed', 'preparing', 'picked_up', 'out_for_delivery', 'delivered'].includes(order?.orderStatus) },
+        { title: 'Preparing Food', completed: ['preparing', 'picked_up', 'out_for_delivery', 'delivered'].includes(order?.orderStatus) },
+        { title: 'Out for Delivery', completed: ['picked_up', 'out_for_delivery', 'delivered'].includes(order?.orderStatus) },
+        { title: 'Delivered', completed: order?.orderStatus === 'delivered' },
     ];
 
-    const restaurantCoords = order.restaurantId?.location?.coordinates ? {
+    const restaurantCoords = order?.restaurantId?.location?.coordinates ? {
         latitude: order.restaurantId.location.coordinates[1],
         longitude: order.restaurantId.location.coordinates[0]
     } : null;
 
-    const customerCoords = order.deliveryAddress?.coordinates ? {
+    const customerCoords = order?.deliveryAddress?.coordinates ? {
         latitude: order.deliveryAddress.coordinates.lat,
         longitude: order.deliveryAddress.coordinates.lng
     } : null;
@@ -67,7 +84,6 @@ const OrderTrackingScreen = ({ navigation, route }) => {
             <View style={styles.mapWrapper}>
                 <MapView
                     ref={mapRef}
-                    provider={PROVIDER_GOOGLE}
                     style={styles.map}
                     initialRegion={{
                         latitude: customerCoords?.latitude || 28.6139,
@@ -120,10 +136,10 @@ const OrderTrackingScreen = ({ navigation, route }) => {
                 <View style={styles.deliveryInfo}>
                     <View>
                         <Text style={styles.arrivalTitle}>
-                            {order.orderStatus === 'delivered' ? 'Order Delivered!' : 'Tracking Live Status'}
+                            {order?.orderStatus === 'delivered' ? 'Order Delivered!' : 'Tracking Live Status'}
                         </Text>
                         <Text style={styles.deliveryStatus}>
-                            Current status: {order.orderStatus.replace('_', ' ').toUpperCase()}
+                            Current status: {order?.orderStatus?.replace('_', ' ').toUpperCase()}
                         </Text>
                     </View>
                 </View>
@@ -255,6 +271,10 @@ const styles = StyleSheet.create({
         ...TYPOGRAPHY.body,
         fontWeight: '600',
         fontSize: 14,
+    },
+    centerContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     actionButtons: {
         flexDirection: 'row',

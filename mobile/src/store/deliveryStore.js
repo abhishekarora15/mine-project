@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { API_URL as BASE_URL } from '../constants/config';
 import useAuthStore from './authStore';
 import { updateDeliveryLocation, initiateSocketConnection, joinOrderRoom, leaveOrderRoom } from '../utils/socket';
 

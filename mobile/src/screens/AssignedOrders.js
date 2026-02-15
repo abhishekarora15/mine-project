@@ -41,7 +41,7 @@ const OrderItem = ({ order, onUpdateStatus }) => {
                     {getStatusIcon(order.orderStatus)}
                     <Text style={styles.statusText}>{order.orderStatus.replace('_', ' ').toUpperCase()}</Text>
                 </View>
-                <Text style={styles.orderId}>#{order._id.slice(-6)}</Text>
+                <Text style={styles.orderId}>#{order?._id?.slice(-6)}</Text>
             </View>
 
             <View style={styles.addressSection}>
