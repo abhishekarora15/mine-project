@@ -2,7 +2,7 @@ const MenuItem = require('../models/MenuItem');
 const Restaurant = require('../models/Restaurant');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const { success } = require('../utils/responseHandler');
+const { success } = require('../utils/responseFormatter');
 
 /**
  * Utility to verify if the restaurant belongs to the user

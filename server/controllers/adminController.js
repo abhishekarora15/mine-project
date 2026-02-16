@@ -2,7 +2,7 @@ const Order = require('../models/Order');
 const Restaurant = require('../models/Restaurant');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const { success } = require('../utils/responseHandler');
+const { success } = require('../utils/responseFormatter');
 
 /**
  * Utility to get the user's restaurant
