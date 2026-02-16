@@ -41,6 +41,7 @@ const userSchema = new mongoose.Schema({
         }
     }],
     profileImage: String,
+    fcmToken: String,
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,

@@ -26,6 +26,14 @@ import DeliveryDashboardScreen from './src/screens/DeliveryDashboard';
 import AssignedOrdersScreen from './src/screens/AssignedOrders';
 import EarningsScreen from './src/screens/EarningsScreen';
 import useAuthStore from './src/store/authStore';
+import { registerForPushNotificationsAsync, updateFCMTokenOnBackend } from './src/utils/notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+let Notifications;
+if (!isExpoGo) {
+  Notifications = require('expo-notifications');
+}
 
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 
@@ -72,7 +80,26 @@ function MainApp() {
 
   useEffect(() => {
     loadUser().catch(err => console.error('LoadUser Error:', err));
-  }, []);
+
+    // Handle Push Notifications
+    registerForPushNotificationsAsync().then(token => {
+      if (token && user) {
+        updateFCMTokenOnBackend(token);
+      }
+    });
+
+    // Listen for notification interactions (clicks)
+    let responseListener;
+    if (Notifications) {
+      responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+        console.log('Notification Response:', response);
+      });
+    }
+
+    return () => {
+      if (responseListener) responseListener.remove();
+    };
+  }, [user?._id]);
 
   if (!fontsLoaded) {
     return (

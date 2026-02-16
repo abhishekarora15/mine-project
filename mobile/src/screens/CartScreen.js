@@ -8,9 +8,7 @@ import { API_URL } from '../constants/config';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import { ActivityIndicator } from 'react-native';
-// Removed static import to prevent startup crash in Expo Go
-// import RazorpayCheckout from 'react-native-razorpay';
-import { RAZORPAY_KEY_ID } from '../constants/config';
+import * as Linking from 'expo-linking';
 
 const CartScreen = ({ navigation }) => {
     const { items, restaurant, updateQuantity, clearCart, getBillDetails, fetchCart } = useCartStore();
@@ -49,54 +47,50 @@ const CartScreen = ({ navigation }) => {
             });
 
             if (response.data.status === 'success') {
-                const { order, razorpayOrder } = response.data.data;
+                const { order, paymentUrl } = response.data.data;
 
-                // STEP 2: Open Razorpay Checkout
-                const options = {
-                    description: 'Order Payment',
-                    image: 'https://i.imgur.com/3g7u6qn.png',
-                    currency: 'INR',
-                    key: RAZORPAY_KEY_ID,
-                    amount: razorpayOrder.amount,
-                    name: 'Food App',
-                    order_id: razorpayOrder.id,
-                    prefill: {
-                        email: 'user@example.com',
-                        contact: '9999999999',
-                        name: 'Test User'
-                    },
-                    theme: { color: COLORS.primary }
-                };
+                // STEP 2: Redirect to PhonePe Pay Page
+                if (paymentUrl) {
+                    // We use Linking to open the PhonePe payment page in the browser/app
+                    // Ideally, you would use a WebView here for better UX
+                    Linking.openURL(paymentUrl);
 
-                const RazorpayCheckout = require('react-native-razorpay').default;
-
-                RazorpayCheckout.open(options).then(async (data) => {
-                    // STEP 3: Verify Payment on Backend
-                    try {
-                        const verifyResponse = await axios.post(`${API_URL}/orders/verify-payment`, {
-                            orderId: order._id,
-                            razorpay_order_id: data.razorpay_order_id,
-                            razorpay_payment_id: data.razorpay_payment_id,
-                            razorpay_signature: data.razorpay_signature
-                        }, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-
-                        if (verifyResponse.data.status === 'success') {
-                            useCartStore.setState({ items: [], restaurant: null });
-                            navigation.navigate('OrderConfirmation', { order: verifyResponse.data.data.order });
-                        }
-                    } catch (verifyErr) {
-                        Alert.alert('Payment Verification Failed', verifyErr.response?.data?.message || 'Please contact support.');
-                    }
-                }).catch((error) => {
-                    Alert.alert('Payment Cancelled', 'Your payment was not completed.');
-                });
+                    // After redirection, the user will come back to the app via a deep link
+                    // or we can show a "Check Status" button or poll
+                    Alert.alert(
+                        'Payment Initiated',
+                        'Please complete the payment in the browser. Would you like to check the status?',
+                        [
+                            {
+                                text: 'Check Status',
+                                onPress: () => verifyPhonePePayment(order.paymentId)
+                            },
+                            { text: 'Cancel', style: 'cancel' }
+                        ]
+                    );
+                }
             }
         } catch (err) {
             Alert.alert('Error', err.response?.data?.message || 'Failed to initiate order');
         } finally {
             setIsPlacingOrder(false);
+        }
+    };
+
+    const verifyPhonePePayment = async (merchantTransactionId) => {
+        try {
+            const response = await axios.post(`${API_URL}/orders/verify-payment`, {
+                merchantTransactionId
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data.status === 'success') {
+                useCartStore.setState({ items: [], restaurant: null });
+                navigation.navigate('OrderConfirmation', { order: response.data.data.order });
+            }
+        } catch (err) {
+            Alert.alert('Payment Not Found', 'We could not verify your payment yet. If you have paid, it will reflect in your orders history soon.');
         }
     };
 

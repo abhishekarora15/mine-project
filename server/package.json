@@ -20,11 +20,11 @@
     "express": "^5.2.1",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.2.1",
+    "firebase-admin": "^13.6.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.1",
     "morgan": "^1.10.1",
-    "razorpay": "^2.9.2",
     "socket.io": "^4.8.3",
     "xss-clean": "^0.1.4"
   },

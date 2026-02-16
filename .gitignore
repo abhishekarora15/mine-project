@@ -8,3 +8,6 @@ web-build/
 server/.env
 mobile/node_modules/
 server/node_modules/
+server/config/serviceAccountKey.json
+mobile/google-services.json
+.idea/

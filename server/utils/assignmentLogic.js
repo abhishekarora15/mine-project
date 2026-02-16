@@ -1,6 +1,7 @@
 const DeliveryProfile = require('../models/DeliveryProfile');
 const Restaurant = require('../models/Restaurant');
 const Order = require('../models/Order');
+const notificationService = require('../services/notificationService');
 
 /**
  * Assigns the nearest available delivery partner to an order.
@@ -44,6 +45,15 @@ exports.assignDeliveryPartner = async (orderId) => {
                 });
 
                 console.log(`Order ${orderId} assigned to partner ${assignedPartner.userId}`);
+
+                // Notify delivery partner via Push Notification
+                notificationService.sendPushNotification(
+                    assignedPartner.userId,
+                    'New Delivery Assigned! 🛵',
+                    `A new order from ${order.restaurantId.name} has been assigned to you.`,
+                    { orderId: orderId.toString(), type: 'new_assignment' }
+                );
+
                 return assignedPartner;
             }
         }
