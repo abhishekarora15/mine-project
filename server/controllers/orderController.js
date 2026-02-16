@@ -172,6 +172,13 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
     success(res, { order });
 });
 
+exports.getRestaurantOrders = catchAsync(async (req, res, next) => {
+    const orders = await Order.find({ restaurantId: req.params.restaurantId })
+        .sort('-createdAt')
+        .populate('userId', 'name phone');
+    success(res, { orders });
+});
+
 exports.handlePhonePeCallback = catchAsync(async (req, res, next) => {
     const { response } = req.body;
     if (!response) {
