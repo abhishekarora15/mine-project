@@ -3,14 +3,13 @@ const Cart = require('../models/Cart');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const { success } = require('../utils/responseFormatter');
-const phonepe = require('../utils/phonepe');
 const { assignDeliveryPartner } = require('../utils/assignmentLogic');
 const { emitStatusUpdate } = require('../utils/socketHandler');
 const notificationService = require('../services/notificationService');
 const Restaurant = require('../models/Restaurant');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
-    const { deliveryAddress, paymentMethod = 'RAZORPAY' } = req.body;
+    const { deliveryAddress, paymentMethod = 'COD' } = req.body;
 
     // 1) Find the user's cart
     const cart = await Cart.findOne({ userId: req.user._id });
@@ -21,14 +20,7 @@ exports.createOrder = catchAsync(async (req, res, next) => {
     // 2) Verify totals
     const { items, restaurantId, subtotal, deliveryCharge, tax, total } = cart;
 
-    // 3) Handle Payment Initiation
-    let paymentId = null;
-    let paymentUrl = null;
-
-    // We create the order first, then get the payment link from PhonePe
-    // This ensures we have a local order ID to track the transaction
-
-    // 4) Create the order
+    // 3) Create the order (gateway-agnostic)
     const newOrder = await Order.create({
         userId: req.user._id,
         restaurantId,
@@ -45,15 +37,17 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         totalAmount: total,
         deliveryAddress,
         paymentMethod,
-        paymentId
+        paymentStatus: 'pending',
+        orderStatus: 'pending'
     });
 
-    // 5) Notify restaurant via Socket.io
+
+    // 4) Notify restaurant via Socket.io
     if (req.io) {
         req.io.to(restaurantId.toString()).emit('new_order', newOrder);
     }
 
-    // 5.1) Notify restaurant owner via Push Notification
+    // 5) Notify restaurant owner via Push Notification
     const restaurant = await Restaurant.findById(restaurantId);
     if (restaurant) {
         notificationService.sendPushNotification(
@@ -64,55 +58,13 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         );
     }
 
-    // 5.2) Initiate PhonePe Payment
-    const phonepeResponse = await phonepe.initiatePayment(newOrder._id, total, req.user.phone || '9999999999');
-    newOrder.paymentId = phonepeResponse.merchantTransactionId;
-    await newOrder.save();
-
-    success(res, { order: newOrder, paymentUrl: phonepeResponse.redirectUrl }, 201);
+    // If COD, we can confirm immediately or wait for restaurant approval
+    // For online payments, the frontend will now call the payment service
+    success(res, { order: newOrder }, 201);
 });
 
-exports.verifyPayment = catchAsync(async (req, res, next) => {
-    const { merchantTransactionId } = req.body;
+// verifyPayment moved to paymentController
 
-    const statusResponse = await phonepe.checkStatus(merchantTransactionId);
-
-    if (statusResponse.code !== 'PAYMENT_SUCCESS') {
-        await Order.findOneAndUpdate({ paymentId: merchantTransactionId }, { paymentStatus: 'failed' });
-        return next(new AppError(`Payment failed: ${statusResponse.message}`, 400));
-    }
-
-    const updatedOrder = await Order.findOneAndUpdate(
-        { paymentId: merchantTransactionId },
-        {
-            paymentStatus: 'paid',
-            orderStatus: 'confirmed'
-        },
-        { new: true }
-    );
-
-    if (!updatedOrder) {
-        return next(new AppError('Order not found', 404));
-    }
-
-    const orderId = updatedOrder._id;
-
-    // CLEAR CART
-    await Cart.findOneAndDelete({ userId: updatedOrder.userId });
-
-    // AUTO ASSIGN DELIVERY PARTNER
-    await assignDeliveryPartner(orderId);
-
-    // 6) Notify customer of successful payment and order confirmation
-    notificationService.sendPushNotification(
-        updatedOrder.userId,
-        'Order Confirmed! ✅',
-        'Your payment was successful and your order is being prepared.',
-        { orderId: orderId.toString(), type: 'order_confirmed' }
-    );
-
-    success(res, { order: updatedOrder });
-});
 
 exports.getMyOrders = catchAsync(async (req, res, next) => {
     const orders = await Order.find({ userId: req.user._id }).sort('-createdAt').populate('restaurantId');
@@ -179,39 +131,3 @@ exports.getRestaurantOrders = catchAsync(async (req, res, next) => {
     success(res, { orders });
 });
 
-exports.handlePhonePeCallback = catchAsync(async (req, res, next) => {
-    const { response } = req.body;
-    if (!response) {
-        return res.status(400).send('Invalid callback payload');
-    }
-
-    const decodedPayload = JSON.parse(Buffer.from(response, 'base64').toString('utf-8'));
-    const { code, merchantTransactionId } = decodedPayload;
-
-    if (code === 'PAYMENT_SUCCESS') {
-        const order = await Order.findOneAndUpdate(
-            { paymentId: merchantTransactionId },
-            {
-                paymentStatus: 'paid',
-                orderStatus: 'confirmed'
-            },
-            { new: true }
-        );
-
-        if (order) {
-            await Cart.findOneAndDelete({ userId: order.userId });
-            await assignDeliveryPartner(order._id);
-
-            notificationService.sendPushNotification(
-                order.userId,
-                'Payment Successful! 🎉',
-                'Your order has been confirmed.',
-                { orderId: order._id.toString(), type: 'payment_success' }
-            );
-        }
-    } else {
-        await Order.findOneAndUpdate({ paymentId: merchantTransactionId }, { paymentStatus: 'failed' });
-    }
-
-    res.status(200).send('OK');
-});

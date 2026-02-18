@@ -68,10 +68,17 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['UPI', 'CARD', 'COD', 'RAZORPAY'],
-        default: 'RAZORPAY',
+        enum: ['UPI', 'CARD', 'COD', 'RAZORPAY', 'CASHFREE'],
+        default: 'CASHFREE',
     },
     paymentId: String,
+    cfOrderId: String,
+    paymentSessionId: String,
+    paymentProvider: {
+        type: String,
+        default: 'cashfree'
+    },
+
     totalEarnings: Number, // Commission for delivery partner
     createdAt: {
         type: Date,

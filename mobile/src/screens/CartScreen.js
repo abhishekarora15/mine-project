@@ -8,17 +8,27 @@ import { API_URL } from '../constants/config';
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 import { ActivityIndicator } from 'react-native';
-import * as Linking from 'expo-linking';
+import { CFPaymentGatewayService, CFSession, CFConfig, CFEnvironment, CFThemeBuilder, CFDropCheckoutPayment, CFPaymentComponentBuilder } from "react-native-cashfree-pg-sdk";
 
 const CartScreen = ({ navigation }) => {
     const { items, restaurant, updateQuantity, clearCart, getBillDetails, fetchCart } = useCartStore();
-    const { token } = useAuthStore();
+    const { token, user } = useAuthStore();
     const [isPlacingOrder, setIsPlacingOrder] = React.useState(false);
 
     const { subtotal, tax, deliveryFee, total } = getBillDetails();
 
     React.useEffect(() => {
         fetchCart();
+        // Setup Cashfree Callbacks
+        CFPaymentGatewayService.setCallback({
+            onVerify: (orderId) => {
+                verifyPayment(orderId);
+            },
+            onError: (error, orderId) => {
+                Alert.alert("Payment Error", error.message || "Something went wrong");
+                console.log(error);
+            }
+        });
     }, []);
 
     const handlePlaceOrder = async () => {
@@ -32,67 +42,74 @@ const CartScreen = ({ navigation }) => {
 
         setIsPlacingOrder(true);
         try {
-            // STEP 1: Create Order on Backend (Returns Razorpay Order ID)
+            // STEP 1: Create Order on Backend (Gateway Agnostic)
             const orderData = {
                 deliveryAddress: {
                     street: 'Home - Dwarka Sector 12',
                     city: 'New Delhi',
                     coordinates: { lat: 28.5921, lng: 77.0460 }
                 },
-                paymentMethod: 'RAZORPAY'
+                paymentMethod: 'CASHFREE'
             };
 
-            const response = await axios.post(`${API_URL}/orders`, orderData, {
+            const orderResponse = await axios.post(`${API_URL}/orders`, orderData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (response.data.status === 'success') {
-                const { order, paymentUrl } = response.data.data;
+            if (orderResponse.data.status === 'success') {
+                const localOrder = orderResponse.data.data.order;
 
-                // STEP 2: Redirect to PhonePe Pay Page
-                if (paymentUrl) {
-                    // We use Linking to open the PhonePe payment page in the browser/app
-                    // Ideally, you would use a WebView here for better UX
-                    Linking.openURL(paymentUrl);
+                // STEP 2: Initiate Cashfree Payment Session
+                const paymentResponse = await axios.post(`${API_URL}/payment/create-order`, {
+                    orderId: localOrder._id
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
 
-                    // After redirection, the user will come back to the app via a deep link
-                    // or we can show a "Check Status" button or poll
-                    Alert.alert(
-                        'Payment Initiated',
-                        'Please complete the payment in the browser. Would you like to check the status?',
-                        [
-                            {
-                                text: 'Check Status',
-                                onPress: () => verifyPhonePePayment(order.paymentId)
-                            },
-                            { text: 'Cancel', style: 'cancel' }
-                        ]
+                if (paymentResponse.data.status === 'success') {
+                    const { paymentSessionId, cfOrderId } = paymentResponse.data.data;
+
+                    // STEP 3: Launch Cashfree Native Checkout
+                    const session = new CFSession(
+                        paymentSessionId,
+                        cfOrderId,
+                        CFEnvironment.SANDBOX
                     );
+
+                    const config = new CFConfig(
+                        CFThemeBuilder.DEFAULT,
+                        session
+                    );
+
+                    const dropCheckoutPayment = new CFDropCheckoutPayment(config);
+                    CFPaymentGatewayService.doPayment(dropCheckoutPayment);
                 }
             }
         } catch (err) {
+            console.error(err);
             Alert.alert('Error', err.response?.data?.message || 'Failed to initiate order');
         } finally {
             setIsPlacingOrder(false);
         }
     };
 
-    const verifyPhonePePayment = async (merchantTransactionId) => {
+    const verifyPayment = async (orderId) => {
         try {
-            const response = await axios.post(`${API_URL}/orders/verify-payment`, {
-                merchantTransactionId
-            }, {
+            const response = await axios.get(`${API_URL}/payment/verify/${orderId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (response.data.status === 'success') {
+            if (response.data.data.status === 'paid') {
                 useCartStore.setState({ items: [], restaurant: null });
                 navigation.navigate('OrderConfirmation', { order: response.data.data.order });
+            } else {
+                Alert.alert('Payment Pending', 'We are waiting for payment confirmation. Check your orders later.');
             }
         } catch (err) {
-            Alert.alert('Payment Not Found', 'We could not verify your payment yet. If you have paid, it will reflect in your orders history soon.');
+            Alert.alert('Verification Error', 'Failed to verify payment status.');
         }
     };
+
 
     if (items.length === 0) {
         return (
