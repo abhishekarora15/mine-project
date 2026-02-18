@@ -6,8 +6,8 @@ const morgan = require('morgan');
 const http = require('http');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
+
 const { Server } = require('socket.io');
 
 const { success, error } = require('./utils/responseFormatter');
@@ -42,10 +42,8 @@ app.use('/api', limiter);
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
 
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
-
 // Data sanitization against XSS
+
 app.use(xss());
 
 app.use(cors());
