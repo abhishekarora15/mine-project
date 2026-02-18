@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/', orderController.createOrder);
-router.post('/verify-payment', orderController.verifyPayment);
+
 router.get('/my-orders', orderController.getMyOrders);
 router.get('/:id', orderController.getOrder);
 router.get('/restaurant/:restaurantId', restrictTo('RESTAURANT_OWNER', 'ADMIN'), orderController.getRestaurantOrders);
