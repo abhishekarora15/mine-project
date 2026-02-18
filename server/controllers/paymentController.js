@@ -36,6 +36,7 @@ exports.createCashfreeOrder = catchAsync(async (req, res, next) => {
 
     try {
         const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+
         const cfData = response.data;
 
         order.cfOrderId = cfData.cf_order_id;
