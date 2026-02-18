@@ -6,9 +6,8 @@ const morgan = require('morgan');
 const http = require('http');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const xss = require('xss-clean');
-
 const { Server } = require('socket.io');
+
 
 const { success, error } = require('./utils/responseFormatter');
 const AppError = require('./utils/appError');
@@ -44,9 +43,8 @@ app.use(express.json({ limit: '10kb' }));
 
 // Data sanitization against XSS
 
-app.use(xss());
-
 app.use(cors());
+
 
 // Database Connection
 const PORT = process.env.PORT || 5000;
