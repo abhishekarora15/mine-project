@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { Alert } from 'react-native';
 import { API_URL } from '../constants/config';
 import useAuthStore from './authStore';
 
@@ -40,7 +41,10 @@ const useCartStore = create((set, get) => ({
 
     addItem: async (product, restaurant) => {
         const { token } = useAuthStore.getState();
-        if (!token) return;
+        if (!token) {
+            Alert.alert('Login Required', 'Please login to add items to your cart.');
+            return;
+        }
 
         try {
             const response = await axios.post(`${API_URL}/cart`, {
@@ -56,7 +60,9 @@ const useCartStore = create((set, get) => ({
                 restaurant: response.data.data.cart.restaurantId,
             });
         } catch (err) {
-            set({ error: err.response?.data?.message || 'Error adding to cart' });
+            const errorMsg = err.response?.data?.message || 'Error adding to cart';
+            set({ error: errorMsg });
+            Alert.alert('Error', errorMsg);
         }
     },
 

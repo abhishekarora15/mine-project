@@ -17,10 +17,15 @@ exports.getCart = catchAsync(async (req, res, next) => {
 
 exports.addToCart = catchAsync(async (req, res, next) => {
     const { menuItemId, quantity = 1, restaurantId } = req.body;
+    console.log('--- ADD TO CART ---');
+    console.log('User:', req.user._id);
+    console.log('MenuItem:', menuItemId);
+    console.log('Restaurant:', restaurantId);
 
     // 1) Find the menu item
     const menuItem = await MenuItem.findById(menuItemId);
     if (!menuItem) {
+        console.log('Error: MenuItem not found');
         return next(new AppError('No menu item found with that ID', 404));
     }
 

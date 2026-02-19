@@ -106,8 +106,19 @@ app.use((err, req, res, next) => {
     });
   } else {
     // Production: Don't leak error details
-    if (err.isOperational) {
-      error(res, err.message, err.statusCode);
+    let errorResponse = { ...err };
+    errorResponse.message = err.message;
+
+    // Handle JWT Errors
+    if (err.name === 'JsonWebTokenError') {
+      errorResponse = new AppError('Invalid token. Please log in again!', 401);
+    }
+    if (err.name === 'TokenExpiredError') {
+      errorResponse = new AppError('Your token has expired! Please log in again.', 401);
+    }
+
+    if (errorResponse.isOperational) {
+      error(res, errorResponse.message, errorResponse.statusCode);
     } else {
       console.error('ERROR 💥', err);
       error(res, 'Something went very wrong!', 500);

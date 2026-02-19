@@ -54,10 +54,19 @@ const MenuItem = ({ item, restaurant }) => {
 
 const RestaurantDetailsScreen = ({ route, navigation }) => {
     const { restaurant } = route.params;
-    const { items, getBillDetails, fetchCart } = useCartStore();
-    const { currentMenu, loading, fetchRestaurantMenu } = useRestaurantStore();
+    const { items, getBillDetails, fetchCart, error: cartError } = useCartStore();
+    const { currentMenu, loading, fetchRestaurantMenu, error: menuError } = useRestaurantStore();
 
     const { total } = getBillDetails();
+
+    React.useEffect(() => {
+        if (cartError) {
+            console.error('Cart Error:', cartError);
+        }
+        if (menuError) {
+            console.error('Menu Error:', menuError);
+        }
+    }, [cartError, menuError]);
 
     React.useEffect(() => {
         fetchCart();
