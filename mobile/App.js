@@ -79,11 +79,16 @@ function MainApp() {
   });
 
   useEffect(() => {
-    loadUser().catch(err => console.error('LoadUser Error:', err));
+    // Initialize authentication state once on mount
+    loadUser().catch(err => console.error('Initial LoadUser Error:', err));
+  }, []); // Only run once on mount
 
-    // Handle Push Notifications
+  useEffect(() => {
+    if (!user) return;
+
+    // Handle Push Notifications when user is logged in
     registerForPushNotificationsAsync().then(token => {
-      if (token && user) {
+      if (token) {
         updateFCMTokenOnBackend(token);
       }
     });

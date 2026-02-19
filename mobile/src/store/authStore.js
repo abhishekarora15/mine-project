@@ -85,8 +85,18 @@ const useAuthStore = create((set) => ({
                 loading: false
             });
         } catch (error) {
-            await SecureStore.deleteItemAsync(TOKEN_KEY);
-            set({ user: null, token: null, isAuthenticated: false, loading: false });
+            console.log('LoadUser Error:', error.response?.status, error.message);
+
+            // ONLY clear token if it's an authentication error (401 or 403)
+            // Do NOT clear if it's a network error (server down, timeout, etc.)
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                console.log('Removing invalid token...');
+                await SecureStore.deleteItemAsync(TOKEN_KEY);
+                set({ user: null, token: null, isAuthenticated: false, loading: false });
+            } else {
+                console.log('Preserving token despite error (likely network/server issue).');
+                set({ loading: false });
+            }
         }
     }
 }));
